@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap>
+	<select id="getItemByCreateDate" resultClass="kr.co.team2.vo.Item">
+	<!-- 스토리 신상 -->
+		select distinct a.no,a.name,a.contents,a.price,a.currentDiscount ,a.createDate ,a.image, a."detailOption.currentPrice",a."detailOption.stock",
+		(select count(distinct opt_color) from options B where B.item_no = a.no) as colorCount,
+    	(select count(distinct opt_size) from options B where B.item_no = a.no) as sizeCount
+		from (
+			select 
+				i.item_no		as	no,	
+				i.item_name	as	name,
+				i.item_contents as	contents,
+				i.item_price	as	price,
+				i.item_display_available	as	displayAvailable,
+				i.item_sell_available	as	sellAvailable,
+				i.item_current_discount	as	currentDiscount,
+				i.item_create_date	as	createDate,
+				i.item_image	as image,
+				o.OPT_CURRENT_PRICE 			as "detailOption.currentPrice",
+				o.opt_stock                  	as "detailOption.stock"
+			from items i, options o
+			where i.item_no = o.item_no
+			and i.item_sell_available = 'Y'
+			and o.OPT_SELL_AVAILABLE = 'Y'
+			and i.item_display_available = 'Y'
+			order by i.ITEM_CREATE_DATE desc
+	   	 ) a
+    where rownum &lt; 10
+	</select>
+	<!-- 상의 베스트 상품  -->
+	<!-- 
+	<select id="getItemByTop" parameterClass="int" resultClass="kr.co.team2.vo.Item">
+		select i.no,i.name,i.contents ,i.price ,i.displayAvailable ,i.sellAvailable ,i.currentDiscount ,i.createDate ,i.image,i."option.review.no"
+		from (
+	      select 
+	            a. item_no		as	no,	
+	            a.item_name	as	name,
+	            a.item_contents as	contents,
+	            a.item_price	as	price,
+	            a.item_display_available	as	displayAvailable,
+	            a.item_sell_available	as	sellAvailable,
+	            a.item_current_discount	as	currentDiscount,
+	            a.item_create_date	as	createDate,
+	            a.item_image	as image,
+	            c.cate_no   as "category.no",
+	            c.cate_sub_no as "category.subNo",
+	            c.cate_contents as "category.cateContents",
+                r.review_no as "option.review.no"
+	        from items a,categorys c , options o ,reviews r 
+	        where a.cate_no = c.cate_no
+	        and o.item_no = a.item_no
+	        and o.opt_no = #value#
+	        and c.cate_no = 4
+	        order by r.review_score desc) i
+		where rownum  &lt; 10
+		
+	</select>
+	 -->
+	<!-- 카테고리 내용으로 번호 찾기 -->
+	<select id="getCategoryByContents" parameterClass="string" resultClass="kr.co.team2.vo.Category">
+		select cate_no as no
+		from CATEGORYS
+		where cate_contents = #value#
+	</select>
+	<!-- 카테고리 번호로 해당 상품 조회 -->
+	<select id="getCategoryByNo" parameterClass="int" resultClass="kr.co.team2.vo.Category">
+		select cate_no as no
+		from CATEGORYS
+		where cate_sub_no = #value#
+	</select>
+	
+	<!--리뷰 top 5 조회  -->
+	<select id="getReviewBycount" resultClass="kr.co.team2.vo.Review">
+		
+		select a.contents, a.count,a.photo, a.score, a."option.item.name" , a."option.item.image"
+		from (
+			select 
+			    r.review_contents as contents,
+			    r.review_counts as count,
+			    r.review_photo as photo,
+			    r.review_score as score,
+			    i.item_name as "option.item.name",
+			    i.item_image as "option.item.image"
+			from items i, options o, reviews r
+			where i.item_no = o.item_no
+			and o.opt_no = r.opt_no
+			order by r.review_counts desc) a
+		where rownum &lt;= 5
+	</select>
+	
+	
+	<!-- 베스트 상품 탑 3 -->
+	<select id="getBestItemByScore" resultClass="kr.co.team2.vo.Item">
+		select DISTINCT(a.no),a.price, a.name, a.image, a."detailOption.currentPrice",a."detailOption.stock",
+		(select count(distinct opt_color) from options B where B.item_no = a.no) as colorCount,
+    	(select count(distinct opt_size) from options B where B.item_no = a.no) as sizeCount
+		from (
+			select 
+				i.item_no						as no,
+			    i.item_price 					as price,
+			    i.item_name 					as name,
+			    i.item_image 					as image,
+			    o.OPT_CURRENT_PRICE 			as "detailOption.currentPrice",
+			    o.opt_stock                  	as "detailOption.stock"
+			from items i, options o, reviews r
+			where i.item_no =  o.item_no
+			and o.opt_no = r.opt_no
+			and i.item_display_available = 'Y'
+            and i.item_sell_available = 'Y'
+            and o.OPT_SELL_AVAILABLE = 'Y'
+			order by r.review_score desc) a
+		where rownum &lt;= 6
+	
+	</select>
+	<!-- 상의 베스트 상품  -->
+	<select id="getTopItemsByCategoryNo" parameterClass="int" resultClass="kr.co.team2.vo.Item">
+		
+		select distinct f.no, f.price, f.name, f.image, f."detailOption.currentPrice",f."detailOption.stock",
+			(select count(distinct opt_color) from options B where B.item_no = f.no) as colorCount,
+	    	(select count(distinct opt_size) from options B where B.item_no = f.no) as sizeCount
+		from (
+			select 
+					a.item_no                      as no, 
+					a.item_name                    as name, 
+					a.item_contents                as contents,
+					a.item_price                   as price,  
+					a.item_current_discount        as currentDiscount, 
+					a.item_image                   as image,
+	                c.cate_contents                as "category.contents",
+	                b.cate_no                      as "category.no",
+	                d.OPT_CURRENT_PRICE 		   as "detailOption.currentPrice",
+	                d.opt_stock                    as "detailOption.stock"
+				from items a, categorys b, categorys c , options d 
+				where a.cate_no = b.cate_no 
+				and b.cate_sub_no = c.cate_no
+	            and d.item_no = a.item_no
+	            and a.item_display_available = 'Y'
+	            and a.item_sell_available = 'Y'
+	            and d.OPT_SELL_AVAILABLE = 'Y'
+	            and c.cate_no in ('1','2','3','5')
+	            order by d.opt_stock asc
+	          ) f
+		where rownum &lt;= 6
+	</select>
+	
+	<!-- 팬츠베스트 상품  -->
+	<select id="getPantItemsByCategoryNo" parameterClass="int" resultClass="kr.co.team2.vo.Item">
+		
+		select distinct f.no, f.price, f.name, f.image, f."detailOption.currentPrice",f."detailOption.stock",
+			(select count(distinct opt_color) from options B where B.item_no = f.no) as colorCount,
+	    	(select count(distinct opt_size) from options B where B.item_no = f.no) as sizeCount
+		from (
+			select 
+					a.item_no                      as no, 
+					a.item_name                    as name, 
+					a.item_contents                as contents,
+					a.item_price                   as price,  
+					a.item_current_discount        as currentDiscount, 
+					a.item_image                   as image,
+	                c.cate_contents                as "category.contents",
+	                b.cate_no                      as "category.no",
+	                d.OPT_CURRENT_PRICE 			as "detailOption.currentPrice",
+	                d.opt_stock                    as "detailOption.stock"
+				from items a, categorys b, categorys c , options d 
+				where a.cate_no = b.cate_no 
+				and b.cate_sub_no = c.cate_no
+	            and d.item_no = a.item_no
+	            and a.item_display_available = 'Y'
+	            and a.item_sell_available = 'Y'
+	            and d.OPT_SELL_AVAILABLE = 'Y'
+	            and c.cate_no in ('4')
+	            order by d.opt_stock asc
+	          ) f
+		where rownum &lt;= 6
+	</select>
+	
+	<select id="getCartCount" parameterClass="int" resultClass="int">
+		select
+			count(*)
+		from 
+			users u, carts c
+		where
+			u.user_no = c.user_no
+			and u.user_no = #value#
+	</select>
+	
+	
+	<select id="getCategoryByreviewScore"  resultClass="int" > 
+		select 
+		    i.cate_no
+		from 
+		    reviews r , options o, items i
+		where 
+		    r.opt_no = o.opt_no
+	     	and i.item_display_available = 'Y'
+            and i.item_sell_available = 'Y'
+            and o.OPT_SELL_AVAILABLE = 'Y'
+		    and i.item_no = o.item_no
+		    and rownum = 1
+		order by r.REVIEW_SCORE desc
+	</select>
+	
+	<select id="getTopCategoryBycateNo" parameterClass="int" resultClass="int">
+		
+			select 
+	            b.cate_sub_no       as no
+			from 
+				categorys b, categorys c 
+			where 
+				b.cate_sub_no = c.cate_no
+	            and b.cate_no = #value#
+	            
+	</select>
+	
+	
+		
+</sqlMap>

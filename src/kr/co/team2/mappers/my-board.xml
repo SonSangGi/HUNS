@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+
+<sqlMap>
+	<select id="getQuestionviewsByCriteria" parameterClass="kr.co.team2.vo.Criteria" resultClass="kr.co.team2.vo.ItemQuestion">
+		
+		
+		select
+			i.ITEM_QUESTION_NO					as no,
+			i.ITEM_QUESTION_TITLE				as title,
+			i.ITEM_QUESTION_CONTENTS			as contents,
+			i.ITEM_QUESTION_FILENAME			as filename,
+			i.ITEM_QUESTION_SECRET				as secret,
+			i.ITEM_QUESTION_AVAILABLE			as available,
+			i.ITEM_QUESTION_CREATE_DATE			as createDate,
+			i.ITEM_QUESTION_TYPE_NO				as "itemQuestionType.no",
+			t.ITEM_QUESTION_TYPE_CONTENTS		as "itemQuestionType.contents",
+			u.user_name						    as "user.name",
+			s.item_name							as "item.name",
+			
+			(select count(*) from ITEM_QUESTION_COMMENTS c where c.ITEM_QUESTION_NO = i.ITEM_QUESTION_NO ) commentCount
+		from
+			ITEM_QUESTIONS i, ITEM_QUESTION_TYPES t , users u , items s
+		where 
+			i.ITEM_QUESTION_TYPE_NO = t.ITEM_QUESTION_TYPE_NO
+            and i.user_no = u.user_no
+			and i.user_no = #no#
+			and s.item_no = i.item_no
+			and i.ITEM_QUESTION_AVAILABLE = 'Y'
+			<dynamic>
+			<isNotEmpty>
+				<isEqual property="opt" compareValue="title">
+					and s.item_name like '%' || #keyword# || '%'
+				</isEqual>
+				<isEqual property="opt" compareValue="content">
+					and i.ITEM_QUESTION_CONTENTS like '%' || #keyword# || '%'
+				</isEqual>
+				<isEqual property="opt" compareValue="write">
+					and u.user_name like '%' || upper(#keyword#) || '%'
+				</isEqual>
+			</isNotEmpty>
+		</dynamic>
+		order by i.ITEM_QUESTION_CREATE_DATE desc
+	</select>
+	
+	
+	<select id="getMyReviewsByCriteria" parameterClass="kr.co.team2.vo.Criteria" resultClass="kr.co.team2.vo.Review">
+		select 
+		    r.REVIEW_NO             as no,
+		    r.REVIEW_CONTENTS       as contents,
+		    r.REVIEW_PHOTO          as photo,
+		    r.REVIEW_COUNTS         as count,
+		    r.REVIEW_CREATE_DATE    as createDate,
+		    u.USER_NO               as "user.no",
+		    u.user_name             as "user.name"
+		from
+		    reviews r, users u
+		where 
+		    r.user_no = u.user_no
+		    and u.user_no = #no#
+		<dynamic>
+			<isNotNull>
+				<isEqual property="opt" compareValue="title">
+					and r.REVIEW_CONTENTS like '%'|| #keyword# ||'%'
+				</isEqual>
+				<isEqual property="opt" compareValue="content">
+					and r.REVIEW_CONTENTS like '%'|| #keyword#|| '%'
+				</isEqual>
+				<isEqual property="opt" compareValue="write">
+					and u.user_name  like '%' || upper(#keyword#) || '%'
+				</isEqual>
+			</isNotNull>
+		</dynamic>
+		order by r.REVIEW_CREATE_DATE desc
+	</select>
+	
+	
+	<select id="getImpoItemByNo" parameterClass="int" resultClass="kr.co.team2.vo.Item">
+		select DISTINCT
+			i.item_image as image,
+			i.item_name as name,
+			o.OPT_CURRENT_PRICE as "detailOption.currentPrice",
+			r.REVIEW_SCORE				as "review.score",
+			r.REVIEW_LIKES				as "review.likes",
+			r.REVIEW_LIKES_PARTICIPATE  as "review.likesParticipate"
+		from
+			items i, reviews r, options o 
+			
+		where
+			i.item_no = o.item_no
+			and r.opt_no = o.opt_no
+			and i.item_no = #value#
+			and o.OPT_SELL_AVAILABLE ='Y'
+			and i.ITEM_SELL_AVAILABLE = 'Y'
+			and i.ITEM_DISPLAY_AVAILABLE = 'Y'
+	</select>
+	
+	<select id="getrecentByNo" parameterClass="int" resultClass="kr.co.team2.vo.Item">
+		   select DISTINCT
+		   	i.item_no as no,
+			i.item_image as image,
+			i.item_name as name,
+			o.OPT_CURRENT_PRICE as "detailOption.currentPrice"
+		from
+			items i, options o 
+			
+		where
+			i.item_no = o.item_no
+			and i.item_no = #value#
+			and o.OPT_SELL_AVAILABLE ='Y'
+			and i.ITEM_SELL_AVAILABLE = 'Y'
+			and i.ITEM_DISPLAY_AVAILABLE = 'Y'
+	
+	</select>
+	
+	
+</sqlMap>

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap>
+	
+	<select id="getItemByItemNo" parameterClass="int" resultClass="kr.co.team2.vo.Item">
+			<!-- 아이템 번호로 해당 제품 상세 정보 얻기 -->
+			select 
+				item_no             as no,
+				item_name           as name,
+				item_price          as price,
+				item_image          as image,
+				item_contents       as contents
+			from items 
+			where item_no = #value#
+	</select>
+
+	<select id="getItemOptionByItemNo" parameterClass="int" resultClass="kr.co.team2.vo.Option">
+			<!-- 아이템 번호로 해당 제품의 색상 중복 제외 후 얻기 -->
+			select 
+				distinct (opt_color)  as color,	
+				opt_current_price     as currentPrice
+			from options
+			where opt_sell_available = 'Y' 
+			and item_no = #no#
+	</select>
+	
+	<select id="getItemSizeBySelected" parameterClass="map" resultClass="kr.co.team2.vo.Option">
+		<!-- 색상 선택에 따른 사이즈 조회 -->
+		select 
+			opt_size as "size",
+			opt_no as no, 
+			opt_stock as stock
+		from options
+		where
+			opt_color = #color#
+			and item_no = #itemNo#
+	</select> 
+	
+	
+	<select id="getItemsCount" parameterClass="kr.co.team2.vo.Criteria" resultClass="int">
+		<!-- 페이징 처리를 위한 제품 수 카운트 -->
+		select 
+			count(*)
+		from 
+			items A, categorys B, categorys C
+		where 
+			A.cate_no = B.cate_no 
+			and B.cate_sub_no = C.cate_no
+			<dynamic>
+				<isNotEqual property="subCategory" compareValue="-1">
+					and B.cate_no = #subCategory#
+				</isNotEqual>
+				<isEqual property="subCategory" compareValue="-1">
+					and C.cate_no = #no#
+				</isEqual>
+			</dynamic>
+		
+	</select>
+	
+	
+	
+	<select id="getItemsByCriteria" parameterClass="kr.co.team2.vo.Criteria" resultClass="kr.co.team2.vo.Item">
+		<!-- 리스트 화면에서 아이템들을 조건에 맞게 조회하는 쿼리 -->
+		select no, name, contents, price, optCurrentPrice, image, createDate, colorCount, sizeCount, stock
+		from 
+			   ( select a.no as no, a.name as name, a.contents as contents, a.price as price, a.optCurrentPrice as optCurrentPrice, a.image as image, a.createDate as createDate,
+				        a.colorCount as colorCount, a.sizeCount as sizeCount, a.stock as stock
+				<dynamic>
+					<isEqual property="sort" compareValue="newp"> 
+						,row_number() over (order by a.createDate desc) as rn
+					</isEqual> 
+					<isEqual property="sort" compareValue="pop">
+						,row_number() over (order by a.stock) as rn
+					</isEqual>
+					<isEqual property="sort" compareValue="min">
+						,row_number() over (order by a.optCurrentPrice) as rn
+					</isEqual>
+					<isEqual property="sort" compareValue="max">
+						,row_number() over (order by a.optCurrentPrice desc) as rn
+					</isEqual>
+				</dynamic>
+					from (
+						select distinct
+						A.item_no                      as no, 
+						A.item_name                    as name, 
+						A.item_contents                as contents,
+						A.item_price                   as price, 
+						O.opt_current_price            as optCurrentPrice,
+						A.item_image                   as image,
+						A.item_create_date             as createDate,
+						(select count(distinct opt_color) from options D where D.item_no = A.item_no) as colorCount,
+						(select count(distinct opt_size) from options D where D.item_no = A.item_no) as sizeCount,
+						(select sum(opt_stock) from options D where D.item_no = A.item_no) as stock	
+						
+						from items A, categorys B, categorys C, options O 
+							where A.cate_no = B.cate_no 
+							and B.cate_sub_no = C.cate_no 
+							and A.item_no = O.item_no
+							and A.item_display_available = 'Y'
+							and A.item_sell_available = 'Y'
+							and O.opt_sell_available = 'Y'
+							<dynamic>
+								<isNotEqual property="subCategory" compareValue="-1">
+									and B.cate_no = #subCategory#
+								</isNotEqual>
+								<isEqual property="subCategory" compareValue="-1">
+									and B.cate_no in (select cate_no 
+													  from categorys 
+													  where cate_sub_no = #no#)		
+									<!-- (select cate_no from category where parent_cat = #no#) -->
+								</isEqual>
+							</dynamic>
+				) a
+			)	
+			where rn >= #beginIndex# and rn &lt;= #endIndex# 
+		
+					
+	</select>
+	
+	<select id="mainCategoryName" parameterClass="int" resultClass="kr.co.team2.vo.Category">
+			<!-- 카테고리 선택에 따른 카테고리 이름 출력 -->
+			select 
+					cate_contents          as contents
+			from
+					Categorys 
+			where  
+					cate_no = #value#	
+	</select>
+	
+	<select id="subCategorySortByNo" parameterClass="int" resultClass="kr.co.team2.vo.Category">
+			<!-- 카테고리 선택에 따른 버튼 생성 -->
+			select
+					B.cate_no                as no, 
+					B.cate_contents          as contents
+			from   
+					Categorys A, Categorys B 
+			where A.cate_no = B.cate_sub_no 
+			and   B.cate_sub_no = #value#
+	</select>
+	
+	<select id="getPhotosByItemNo" parameterClass="int" resultClass="kr.co.team2.vo.Review">
+			<!-- 아이템 번호로 해당 제품들 포토 리뷰 사진들 조회 -->
+			select 
+				R.review_photo   as photo
+			from 
+				items I, reviews R, options O
+			where
+				I.item_no = O.item_no 
+				and R.opt_no = O.opt_no 
+				and I.item_no = #value# 		
+	</select>
+	
+	<select id="getReviewByItemNo" parameterClass="int" resultClass="kr.co.team2.vo.Review">
+			<!-- 아이템 번호로 해당 제품 리뷰 테이블 만들기 -->
+			select 
+				R.review_no       as no,
+				R.review_contents as contents, 
+				U.user_id         as "user.id",
+				R.review_score    as score
+			from 
+				items I, reviews R, options O, users U 
+			where 
+				I.item_no = O.item_no
+				and R.opt_no = O.opt_no 
+				and R.user_no = U.user_no 
+				and I.item_no = #value#				
+	</select>
+	
+	<select id="getQuestionBoardByItemNo" parameterClass="int" resultClass="kr.co.team2.vo.ItemQuestion">
+			<!-- 아이템 번호로 상품문의글 조회  -->
+			select 
+				Q.item_question_no            as   no, 
+				Q.item_question_title         as   title,
+				I.item_name                   as   "item.name",
+				U.user_id              		  as   "user.id",
+				Q.item_question_create_date   as   createDate 
+			from 
+				users U, items I, item_questions Q 
+			where 
+				U.user_no = Q.user_no
+				and I.item_no = Q.item_no 
+				and I.item_no = #value#
+	</select>
+	
+	<select id="sendOptNoToReview" parameterClass="map" resultClass="kr.co.team2.vo.Option">
+			<!-- 리뷰로 옵션 넘버를 보내기 위한 쿼리 -->
+			select 
+				opt_no as no
+			from options
+			where
+				opt_color = #color#
+				and item_no = #itemNo#
+	</select> 
+	
+		
+</sqlMap>

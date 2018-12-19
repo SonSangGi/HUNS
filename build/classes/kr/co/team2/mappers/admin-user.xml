@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap>
+	<select id="getAllUsers" resultClass="kr.co.team2.vo.User">
+	select 
+        USER_NO         	as no,
+        USER_ID         	as id,
+        USER_PASSWORD   	as password,
+        USER_NAME       	as name,
+        USER_GENDER     	as gender,
+        USER_BIRTHDAY   	as birthDay,
+        QUESTION_NO     	as "userQuestion.no",
+        USER_ANSWER     	as answer,
+        USER_ADDRESS1   	as address1,
+        USER_ADDRESS2   	as address2,
+        USER_TEL        	as tel,
+        USER_PHONE     		as phoneTel,
+        USER_EMAIL          as email,
+        USER_AVAILABLE      as available,
+        USER_CREATE_DATE    as createDate
+    from USERS
+	</select>
+	
+		<select id="getUserByN" resultClass="kr.co.team2.vo.User" parameterClass="int">
+	select 
+        USER_NO         	as no,
+        USER_ID         	as id,
+        USER_PASSWORD   	as password,
+        USER_NAME       	as name,
+        USER_GENDER     	as gender,
+        USER_BIRTHDAY   	as birthDay,
+        QUESTION_NO     	as "userQuestion.no",
+        USER_ANSWER     	as answer,
+        USER_ADDRESS1   	as address1,
+        USER_ADDRESS2   	as address2,
+        USER_TEL        	as tel,
+        USER_PHONE     		as phoneTel,
+        USER_EMAIL          as email,
+        USER_AVAILABLE      as available,
+        USER_CREATE_DATE    as createDate
+    from USERS
+    where USER_NO = #value#
+	</select>
+	
+	<update id="updateUse" parameterClass="kr.co.team2.vo.User">
+	update	users set
+        USER_ID         	= #id#,
+        USER_PASSWORD   	= #password#,
+        USER_NAME       	= #name#,
+        USER_GENDER     	= #gender#,
+        USER_BIRTHDAY   	= #birthDay#,
+        USER_ANSWER     	= #answer#,
+        USER_ADDRESS1   	= #address1#,
+        USER_ADDRESS2   	= #address2#,
+        USER_TEL        	= #tel#,
+        USER_PHONE     		= #phoneTel#,
+        USER_EMAIL          = #email#,
+        USER_AVAILABLE      = #available#
+     where USER_NO = #no#
+	</update>
+	
+	<!-- admin user -->
+	
+	<insert id="addAdmin" parameterClass="kr.co.team2.vo.AdminUser">
+	insert into ADMIN_USER(ADMIN_ID,ADMIN_PASSWORD)
+	values (#id#,#password#)
+	</insert>
+	
+	<select id="getAdminUserByNo" resultClass="kr.co.team2.vo.AdminUser" parameterClass="String">
+	select 
+			ADMIN_ID 		as id,
+			ADMIN_PASSWORD 	as password
+	from 
+			ADMIN_USER
+	where 
+			ADMIN_ID = #value#
+	</select>
+	
+	<select id="getAllLog" resultClass="kr.co.team2.vo.UserLog">
+		select  
+				LOG_NO					as no,
+				LOGIN_IP 				as ip,
+				USER_ID					as id,
+				USER_LOGIN_CREATE_DATE	as createDate,
+				LOG_CONTENTS			as contents
+		from 
+				USER_LOGIN_LOGS
+		order by USER_LOGIN_CREATE_DATE desc
+	</select>
+	<insert id="addLog" parameterClass="kr.co.team2.vo.UserLog">
+		insert into USER_LOGIN_LOGS(
+						LOG_NO,
+						LOGIN_IP,
+						USER_ID,
+						USER_LOGIN_CREATE_DATE,
+						LOG_CONTENTS)
+		values(log_no_seq.nextval,#ip#,#id#,sysdate,#contents#)
+	</insert>
+	
+</sqlMap>

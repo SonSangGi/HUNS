@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+    
+<sqlMap>
+	<select id="getOrders" parameterClass="map" resultClass="kr.co.team2.vo.OrderDetail">
+		select
+			B.order_item_no			as no,
+			B.order_qty				as qty,
+			B.order_no 				as "order.no",
+			B.opt_no				as "option.no",
+			I.item_name				as "option.item.name",
+			I.item_image			as "option.item.image",
+			O.opt_current_price		as "option.currentPrice",
+			O.opt_color				as "option.color",
+			O.opt_size				as "option.size",
+			O.review_pass			as "option.reviewPass",
+			A.order_state			as "order.state", 
+			A.order_create_date		as "order.createDate"
+		from 
+			orders A ,orderDetails B, items I, options O
+		WHERE
+			A.order_no = B.order_no
+			and B.opt_no = O.opt_no
+			and O.item_no = I.item_no
+			and A.user_no = #userno#
+			<dynamic>
+				<isNotNull property="startDate">
+					and A.order_create_date >=  to_date(#startDate#, 'yyyy-mm-dd')
+				</isNotNull>
+				<isNotNull property="endDate"> 
+					and A.order_create_date &lt; to_date(#endDate#, 'yyyy-mm-dd') +1
+				</isNotNull>
+			</dynamic>
+		order by
+			A.order_no desc
+
+	</select>
+
+	<select id="getOrderSeq" resultClass="int">
+	select order_seq.nextval from dual
+	</select>
+	
+	<insert id="saveOrder" parameterClass="kr.co.team2.vo.Orders">
+		insert into orders
+		(order_no, order_create_date, order_state, user_no)
+		values
+		(#no#, sysdate,'입금대기',#user.no#)
+	</insert>
+	
+	<insert id="saveOrderDetail" parameterClass="kr.co.team2.vo.OrderDetail">
+		insert into orderdetails
+		(order_item_no, order_qty, order_no, opt_no)
+		values
+		(order_item_seq.nextval,#qty#,#order.no#,#option.no#)
+	</insert>
+</sqlMap>

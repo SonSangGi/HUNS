@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap>
+
+	<select id="getItemSearchByCriteria1" parameterClass="kr.co.team2.vo.Criteria" resultClass="kr.co.team2.vo.Item">
+
+			select
+			a.no,a.name,a.contents,a.price,a.displayAvailable,a.sellAvailable,a.currentDiscount,a.createDate,a."category.no",a.image,
+			a."detailOption.stock",a."detailOption.currentPrice",
+				
+			(select count(distinct opt_color) from options b where b.item_no = a.no) as colorCount,
+			(select count(distinct opt_size) from options b where b.item_no = a.no) as sizeCount  
+			
+			from(
+				select distinct
+					<dynamic>	
+						<isEqual property="sort" compareValue="new">
+							row_number() over (order by i.ITEM_CREATE_DATE desc) as rn,
+						</isEqual>
+						<isEqual property="sort" compareValue="min">
+							row_number() over (order by o.OPT_CURRENT_PRICE asc) as rn,
+						</isEqual>
+						<isEqual property="sort" compareValue="max">
+							row_number() over (order by o.OPT_CURRENT_PRICE desc) as rn,
+						</isEqual>
+						
+						<isEmpty property="sort">
+							row_number() over (order by i.ITEM_CREATE_DATE desc) as rn,
+						</isEmpty>
+					</dynamic>    
+					i.ITEM_NO					as	no,
+					i.ITEM_NAME					as	name,
+					i.ITEM_CONTENTS				as	contents,
+					i.ITEM_PRICE				as	price,
+					i.ITEM_DISPLAY_AVAILABLE	as	displayAvailable,
+					i.ITEM_SELL_AVAILABLE		as	sellAvailable,
+					i.ITEM_CURRENT_DISCOUNT		as	currentDiscount,
+					i.ITEM_CREATE_DATE			as	createDate,
+					i.CATE_NO					as	"category.no",
+					i.ITEM_IMAGE				as	image,
+					o.OPT_STOCK					as	"detailOption.stock",
+					o.OPT_CURRENT_PRICE			as	"detailOption.currentPrice",
+					o.OPT_SELL_AVAILABLE		as	"detailOption.sellAvailable"
+					
+				from
+					items i,options o 
+						<dynamic>
+							<isNotEqual property="no" compareValue="0">			
+								, CATEGORYS b, CATEGORYS c
+							</isNotEqual>
+							
+							
+					    </dynamic>  
+				where
+					i.item_no = o.item_no
+					and o.OPT_SELL_AVAILABLE ='Y'
+					AND i.ITEM_SELL_AVAILABLE = 'Y'
+					AND i.ITEM_DISPLAY_AVAILABLE = 'Y'	
+					<!-- 카테고리 -->
+						<dynamic>
+							
+						
+						
+						    <isNotEqual property="no" compareValue="0">
+								and i.cate_no = b.cate_no
+								and b.cate_sub_no = c.cate_no
+								and c.cate_no = #no#
+							</isNotEqual> 
+							<isNotNull property="opt" >
+								<isEqual property="opt" compareValue="itemName">
+									and i.ITEM_NAME like '%' || #keyword# || '%'
+								</isEqual>
+								<isEqual property="opt" compareValue="itemSize">
+									and o.OPT_SIZE like '%' || #keyword# || '%'
+								</isEqual>
+								<isEqual property="opt" compareValue="itemColor">
+									and o.OPT_COLOR like '%' || #keyword# || '%'
+								</isEqual>
+							</isNotNull>
+							<isNotEqual property="minPrice" compareValue="0">
+									and o.OPT_CURRENT_PRICE >= #minPrice#
+							</isNotEqual>
+							<isNotEqual property="maxPrice"  compareValue="0">
+									and o.OPT_CURRENT_PRICE &lt;= #maxPrice#
+							</isNotEqual> 
+						</dynamic>
+				)a
+			where
+				a.rn >= #beginIndex# and a.rn &lt;= #endIndex#
+				
+	</select>
+	
+	<select id="getSearchCount" parameterClass="kr.co.team2.vo.Criteria" resultClass="int">
+		select 
+			count(*)
+		from
+			items a,options o
+		where
+			a.item_no = o.item_no
+			and a.item_display_available = 'Y'
+	        and a.item_sell_available = 'Y'
+	        and o.OPT_SELL_AVAILABLE = 'Y'
+			<dynamic>
+				<isNotNull property="opt" >
+					<isEqual property="opt" compareValue="itemName">
+						and a.ITEM_NAME like '%' || #keyword# || '%'
+					</isEqual>
+					<isEqual property="opt" compareValue="itemSize">
+						and o.OPT_SIZE like '%' || #keyword# || '%'
+					</isEqual>
+					<isEqual property="opt" compareValue="itemColor">
+						and o.OPT_COLOR like '%' || #keyword# || '%'
+					</isEqual>
+					</isNotNull>
+					<isNotEqual property="minPrice" compareValue="0">
+							and o.OPT_CURRENT_PRICE >= #minPrice#
+					</isNotEqual>
+					<isNotEqual property="maxPrice"  compareValue="0">
+							and o.OPT_CURRENT_PRICE &lt;= #maxPrice#
+					</isNotEqual>
+			</dynamic>
+	</select>
+	
+	
+	
+	<select id="getItemSearchByCriteria" parameterClass="kr.co.team2.vo.Criteria" resultClass="kr.co.team2.vo.Item">
+
+			select item_no as no,
+				   item_image as image, 
+				   opt_current_price as "detailOption.currentPrice", 
+				   rn,
+				   item_name	as name,
+				   item_price as price,
+				   ITEM_CREATE_DATE as createDate,
+			    (select count(distinct opt_color) from options where opt_sell_available = 'Y' and item_no = X.item_no) colorCount,
+			    (select count(distinct opt_size) from options where opt_sell_available = 'Y' and item_no = X.item_no) sizeCount
+			from (
+			    select item_no, item_image, opt_current_price,  item_name,item_price ,ITEM_CREATE_DATE,
+			    
+			    <dynamic>	
+						<isEqual property="sort" compareValue="new">
+							row_number() over (order by ITEM_CREATE_DATE desc) as rn
+						</isEqual>
+						<isEqual property="sort" compareValue="min">
+							row_number() over (order by OPT_CURRENT_PRICE asc) as rn
+						</isEqual>
+						<isEqual property="sort" compareValue="max">
+							row_number() over (order by OPT_CURRENT_PRICE desc) as rn
+						</isEqual>
+						
+						<isEmpty property="sort">
+							row_number() over (order by ITEM_CREATE_DATE desc) as rn
+						</isEmpty>
+				</dynamic>  
+			    
+			   
+			    from (
+			    
+			        select distinct A.item_no, opt_current_price, B.item_image, B.item_name, B.item_price, B.ITEM_CREATE_DATE
+			        from options A, items B
+			        <dynamic>
+							<isNotEqual property="no" compareValue="0">			
+								, CATEGORYS C, CATEGORYS D
+							</isNotEqual>
+							
+							
+					</dynamic> 
+			        
+			        where A.item_no = B.item_no
+			        and A.OPT_SELL_AVAILABLE ='Y'
+			        and B.ITEM_SELL_AVAILABLE = 'Y'
+			        and B.ITEM_DISPLAY_AVAILABLE = 'Y'	
+			        <dynamic>
+						
+					
+					    <isNotEqual property="no" compareValue="0">
+							and B.cate_no = C.cate_no
+							and C.cate_sub_no = D.cate_no
+							and D.cate_no = #no#
+						</isNotEqual> 
+						<isNotNull property="opt" >
+							<isEqual property="opt" compareValue="itemName">
+								and B.ITEM_NAME like '%' || #keyword# || '%'
+							</isEqual>
+							<isEqual property="opt" compareValue="itemSize">
+								and A.OPT_SIZE like '%' || #keyword# || '%'
+							</isEqual>
+							<isEqual property="opt" compareValue="itemColor">
+								and A.OPT_COLOR like '%' || #keyword# || '%'
+							</isEqual>
+						</isNotNull>
+						<isNotEqual property="minPrice" compareValue="0">
+								and A.OPT_CURRENT_PRICE >= #minPrice#
+						</isNotEqual>
+						<isNotEqual property="maxPrice"  compareValue="0">
+								and A.OPT_CURRENT_PRICE &lt;= #maxPrice#
+						</isNotEqual> 
+					</dynamic>
+			        
+			        )
+			) X
+		where X.rn >= #beginIndex# and X.rn &lt;= #endIndex#
+		
+					
+	</select>
+	
+</sqlMap>

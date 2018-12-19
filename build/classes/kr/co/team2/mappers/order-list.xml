@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+    
+<sqlMap>
+	<select id="getOrderOption" parameterClass="int" resultClass="kr.co.team2.vo.Option">
+		select 
+			A.ITEM_IMAGE 			as "item.image", 
+			A.ITEM_NAME 			as "item.name", 
+			A.ITEM_NO				as "item.no", 
+			B.OPT_NO				as no, 
+			B.OPT_COLOR				as color, 
+			B.OPT_SIZE				as "size", 
+			B.OPT_CURRENT_PRICE 	as currentPrice
+		from items A, options B
+		where B.ITEM_NO = A.ITEM_NO
+			  and B.OPT_NO = #value#
+
+	</select>
+
+	
+</sqlMap>

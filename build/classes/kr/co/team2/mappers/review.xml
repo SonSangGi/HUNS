@@ -1,0 +1,892 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap>
+	
+	<select id="getPhotoReviewByReviewNo" parameterClass="int" resultClass="kr.co.team2.vo.PhotoReviews">
+		select 
+			A.review_no				as no,
+			A.review_photo 			as photo,
+			A.review_contents		as contents,
+			A.Review_create_date	as createDate,
+			A.Review_score			as score,
+			A.review_counts			as counts,
+			C.opt_no				as "option.no",
+			A.user_no				as "user.no",
+			B.item_no				as "item.no",
+			D.info_no				as "reviewinfo.no"
+		
+		from 
+			reviews A, items B, options C, reviews_info D
+		WHERE
+			A.opt_no = C.OPT_NO
+			and B.item_no = c.item_no
+			and A.review_no = D.review_no
+			and A.review_no = #value#	
+	
+	</select>
+	
+	
+	<select id="getItemByItemNoOnReviewAdd" parameterClass="int" resultClass="kr.co.team2.vo.Item">
+		select
+			item_no			as no,
+			item_name		as name,
+			item_contents	as contents,
+			item_price		as price,
+			cate_no			as "category.no",
+			item_image		as image
+		from
+			items
+		where
+			item_no = #value#			
+	
+	</select>
+	
+	<update id="updateReviewPassOnOption" parameterClass="kr.co.team2.vo.ReviewPass">
+		update 
+			options 
+			set review_pass =  #pass#
+		where
+			opt_no = #optNo#
+	</update>
+	
+	<select id="getItembyOptionNo" parameterClass="int" resultClass="kr.co.team2.vo.Item">
+		select
+			A.item_no				as no,
+			A.item_name				as name,
+			A.item_contents			as contents,
+			A.item_price			as price,
+			A.cate_no				as "category.no",
+			A.item_image			as image
+			
+		from
+			items A, Options B
+		where
+			A.item_no = B.item_no
+			and B.opt_no = #value#
+	</select>
+
+	<select id="getCategorys" resultClass="kr.co.team2.vo.Category">
+		select 
+			cate_no			as no,
+			cate_contents	as contents,
+			nvl(cate_sub_no, 0)		as subNo
+
+		from 
+			categorys
+		where 
+			cate_sub_no is null
+	</select>
+
+	<select id="getAllBestReviews" resultClass="kr.co.team2.vo.PhotoReviews">
+		select 
+			*
+		from (
+				select 
+					ROW_NUMBER() over (order by A.review_score desc) rn,
+					A.review_no				as no,
+					A.review_photo 			as photo,
+					A.review_contents		as contents,
+					A.Review_create_date	as createDate,
+					A.Review_score			as score,
+					A.review_counts			as counts
+				
+				from 
+					reviews A, items B, options C, reviews_info D
+				WHERE
+					A.opt_no = C.OPT_NO
+					and B.item_no = c.item_no	
+					and A.review_no = D.review_no
+			)
+		where rn &lt;=3	
+		
+			
+	</select>
+	
+	<select id="getMainBestReviews" resultClass="kr.co.team2.vo.PhotoReviews">
+		select 
+			*
+		from (
+				select 
+					ROW_NUMBER() over (order by A.review_score desc) rn,
+					A.review_no				as no,
+					A.review_photo 			as photo,
+					A.review_contents		as contents,
+					A.Review_create_date	as createDate,
+					A.Review_score			as score,
+					A.review_counts			as counts
+				
+				from 
+					reviews A, items B, options C, reviews_info D
+				WHERE
+					A.opt_no = C.OPT_NO
+					and B.item_no = c.item_no	
+					and A.review_no = D.review_no
+			)
+		where rn &lt;=5	
+		
+			
+	</select>
+
+	<update id="updateRecentItemReviewNoByphotoReviews" parameterClass="kr.co.team2.vo.PhotoReviews">
+		update
+			items
+		set
+			item_recent_review_no = #no#
+		where
+			item_no = #item.no#		
+	</update>
+	
+	<update id="updateReviewInfo" parameterClass="kr.co.team2.vo.ReviewInfo">
+		update
+			reviews_info
+		set
+			review_no	= #reviewNo#,
+			info_no		= #no#,
+			info_sex	= #sex#,
+			info_age	= #age#,
+			info_height	= #height#,
+			info_weight	= #weight#,
+			info_size	= #sizes#
+		where
+			review_no = #reviewNo#		
+	
+	</update>
+	
+	<update id="updateReviewByReview" parameterClass="kr.co.team2.vo.Review">
+		update
+			reviews
+		set
+			review_no					= #no#,
+			review_contents				= #contents#,
+			review_photo				= #photo#,
+			review_create_date			= sysdate,
+			review_score				= #score#,
+			user_no						= #user.no#,
+			opt_no						= #option.no#
+		where
+			review_no = #no#
+		
+	</update>
+
+	<select id="getReviewSeq" resultClass="int">
+		select 
+			rev_seq.nextval 
+		from 
+			dual
+	</select>
+	
+	<insert id="addReviewInfo" parameterClass="kr.co.team2.vo.ReviewInfo">
+		insert into
+			reviews_info
+		(review_no, info_no, info_sex, info_age, info_height, info_weight, info_size)
+		values
+		(#reviewNo#, rev_info_seq.nextval, #sex#, #age#, #height#, #weight#, #sizes#  )	
+	
+	</insert>
+	
+	<delete id="deleteReviewInfoByReviewInfoNo" parameterClass="int">
+		delete
+		from
+			reviews_info
+		where
+			info_no = #value#	
+	</delete>
+	
+	<insert id="addReview" parameterClass="kr.co.team2.vo.Review">
+		insert into
+			reviews
+		(review_no, review_contents, review_photo, review_counts, review_create_date,
+		 review_score, user_no, opt_no, review_likes, review_likes_participate)	
+		values
+		(#no#, #contents#, #photo#, 1, sysdate,
+		 #score#, #user.no#, #option.no#, 0, 0)
+	</insert>
+	
+	<delete id="deleteReviewByReviewNo" parameterClass="int">
+		delete
+		from
+			reviews
+		where
+			review_no = #value#	
+	</delete>
+  	
+	<select id="getUserByUserNo" parameterClass="int" resultClass="kr.co.team2.vo.User">
+		select
+			user_no				as no,
+			user_id				as id,
+			user_password		as password,
+			user_name			as name,
+			user_gender			as gender,
+			user_birthday		as birthDay,
+			question_no			as "userQuestion.no",
+			user_answer			as answer,
+			user_address1		as address1,
+			user_address2		as address2,
+			user_tel			as tel,
+			user_phone			as phoneTel,
+			user_email			as email,
+			user_available		as available,
+			user_create_date	as createDate
+		from
+			users
+		where
+			user_no = #value#	
+	
+	</select>
+	
+	<!-- opt.size는 naming 문제 때문에 쿼리에서 제외됨 -->
+	<select id="getOptionByOptionNo" parameterClass="int" resultClass="kr.co.team2.vo.Option">
+		select
+			opt_no				as no,
+			opt_color			as color,
+			opt_stock			as stock,
+			opt_current_price	as currentPrice,
+			opt_sell_available	as sellAvailable,
+			item_no				as "item.no"
+		from
+			options
+		where
+			opt_no = #value#		
+	</select>
+	
+	<update id="updateReviewLikesByReview" parameterClass="kr.co.team2.vo.Review">
+		update
+			reviews
+		set
+			review_likes = #likes#,
+			review_likes_participate = #likesParticipate#	
+		where
+			review_no = #no# 	
+	
+	</update>
+	
+	<select id="getReviewByReviewNo" parameterClass="int" resultClass="kr.co.team2.vo.Review">
+		select
+			review_no					as no,
+			review_contents				as contents,
+			review_photo				as photo,
+			review_counts				as count,
+			review_create_date			as createDate,
+			review_score				as score,
+			user_no						as "user.no",
+			opt_no						as "opt.no",
+			review_likes				as likes,
+			review_likes_participate	as likesParticipate
+		from
+			reviews
+		where
+			review_no = #value#	
+		
+	</select>
+
+	<select id="getReviewInfoByReviewNo" parameterClass="int" resultClass="kr.co.team2.vo.ReviewInfo">
+		select
+			review_no	as reviewNo,
+			info_no		as no,
+			info_sex	as sex,
+			info_age	as age,
+			info_height	as height,
+			info_weight	as weight,
+			info_size	as sizes
+		from
+			reviews_info
+		where
+			review_no = #value#		
+			
+	</select>
+
+	<select id="getItemByReviewNo" parameterClass="int" resultClass="kr.co.team2.vo.Item">
+		select
+			A.item_no		as no,
+			A.item_name		as name,
+			A.item_image	as image
+		from
+			items A, reviews B, options C
+		where
+			A.item_no = C.item_no
+			and B.opt_no = C.opt_no
+			and B.review_no = #value#	 	
+	
+	</select>
+	
+	<select id="getPhotoReviewsByCriteria" parameterClass="kr.co.team2.vo.Criteria" resultClass="kr.co.team2.vo.PhotoReviews">
+	
+		select 
+			*
+		from (
+				select 
+				<dynamic>
+					<isEqual property="sort" compareValue="score">
+						row_number() over (order by A.review_score desc) rn,
+					</isEqual>
+					<isEqual property="sort" compareValue="likes">
+						row_number() over (order by A.review_likes desc) rn,
+					</isEqual>
+					<isEqual property="sort" compareValue="recent">
+						row_number() over (order by review_create_date desc) rn,
+					</isEqual>
+					
+				</dynamic>
+					A.review_no				as no,
+					A.review_photo 			as photo,
+					A.review_contents		as contents,
+					A.Review_create_date	as createDate,
+					A.Review_score			as score,
+					A.Review_likes			as likes,
+					A.review_counts			as counts
+				
+				from 
+					reviews A, items B, options C, reviews_info D , categorys E
+				WHERE
+					A.opt_no = C.OPT_NO
+					and B.item_no = c.item_no	
+					and A.review_no = D.review_no
+					and B.cate_no = E.cate_no
+				<dynamic>
+					<isNotNull property="option1">
+						<isEqual property="option1" compareValue="male">
+							and d.info_sex = 'male'
+						</isEqual>
+						<isEqual property="option1" compareValue="female">
+							and d.info_sex = 'female'
+						</isEqual>
+					</isNotNull>
+					<isNotNull property="option2">
+						<isEqual property="option2" compareValue="10">
+							and d.info_age >= 0
+							and d.info_age &lt; 20
+						</isEqual>
+						<isEqual property="option2" compareValue="20">
+							and d.info_age >= 20
+							and d.info_age &lt; 30
+						</isEqual>
+						<isEqual property="option2" compareValue="30">
+							and d.info_age >= 30
+							and d.info_age &lt; 40
+						</isEqual>
+						<isEqual property="option2" compareValue="40">
+							and d.info_age >= 40
+							and d.info_age &lt; 50
+						</isEqual>
+						<isEqual property="option2" compareValue="50">
+							and d.info_age >= 50
+						</isEqual>
+					</isNotNull>
+					<isNotNull property="option3">
+						<isEqual property="option3" compareValue="130">
+							and d.info_height &lt; 130
+						</isEqual>
+						<isEqual property="option3" compareValue="140">
+							and d.info_height >= 140
+							and d.info_height &lt; 150
+						</isEqual>
+						<isEqual property="option3" compareValue="150">
+							and d.info_height >= 150
+							and d.info_height &lt; 160
+						</isEqual>
+						<isEqual property="option3" compareValue="160">
+							and d.info_height >= 160
+							and d.info_height &lt; 170
+						</isEqual>
+						<isEqual property="option3" compareValue="170">
+							and d.info_height >= 170
+							and d.info_height &lt; 180
+						</isEqual>
+						<isEqual property="option3" compareValue="180">
+							and d.info_height >= 180
+							and d.info_height &lt; 190
+						</isEqual>
+						<isEqual property="option3" compareValue="190">
+							and d.info_height >= 190
+						</isEqual>
+					</isNotNull>
+					<isNotNull property="option4">
+						<isEqual property="option4" compareValue="30">
+							and d.info_weight &lt; 40
+						</isEqual>
+						<isEqual property="option4" compareValue="40">
+							and d.info_weight >= 40
+							and d.info_weight &lt; 50
+						</isEqual>
+						<isEqual property="option4" compareValue="50">
+							and d.info_weight >= 50
+							and d.info_weight &lt; 60
+						</isEqual>
+						<isEqual property="option4" compareValue="60">
+							and d.info_weight >= 60
+							and d.info_weight &lt; 70
+						</isEqual>
+						<isEqual property="option4" compareValue="70">
+							and d.info_weight >= 70
+							and d.info_weight &lt; 80
+						</isEqual>
+						<isEqual property="option4" compareValue="80">
+							and d.info_weight >= 80
+							and d.info_weight &lt; 90
+						</isEqual>
+						<isEqual property="option4" compareValue="90">
+							and d.info_weight >= 90
+						</isEqual>
+					</isNotNull>
+					<isNotNull property="option5">
+						<isEqual property="option5" compareValue="90">
+							and d.info_size = 90
+						</isEqual>
+						<isEqual property="option5" compareValue="95">
+							and d.info_size = 95
+						</isEqual>
+						<isEqual property="option5" compareValue="100">
+							and d.info_size = 100
+						</isEqual>
+						<isEqual property="option5" compareValue="105">
+							and d.info_size = 105
+						</isEqual>
+						<isEqual property="option5" compareValue="110">
+							and d.info_size = 110
+						</isEqual>
+					</isNotNull>
+					<isNotEmpty property="category"> 
+						and E.cate_no in (
+											select
+												E.cate_no
+											from
+												categorys
+											where
+												E.cate_sub_no = #category#		
+											)
+					</isNotEmpty>
+				
+					<isNotNull property="keyword">
+							and
+							(B.item_name like '%' || #keyword# || '%'
+								or 
+							A.review_contents like '%' || #keyword# || '%')
+					</isNotNull>
+				</dynamic>	
+			
+		)
+		
+			where
+				rn >= #beginIndex# and rn &lt;= #endIndex#
+		
+	</select>
+	
+	<select id="getPhotoReviewsCount" parameterClass="kr.co.team2.vo.Criteria" resultClass="int">
+		select
+			count(*)
+		from (
+				select 
+				<dynamic>
+					<isEqual property="sort" compareValue="score">
+						row_number() over (order by A.review_score desc) rn,
+					</isEqual>
+					<isEqual property="sort" compareValue="likes">
+						row_number() over (order by A.review_likes desc) rn,
+					</isEqual>
+					<isEqual property="sort" compareValue="recent">
+						row_number() over (order by review_create_date desc) rn,
+					</isEqual>
+					
+				</dynamic>
+					A.review_no				as no,
+					A.review_photo 			as photo,
+					A.review_contents		as contents,
+					A.Review_create_date	as createDate,
+					A.Review_score			as score,
+					A.Review_likes			as likes,
+					A.review_counts			as counts
+				
+				from 
+					reviews A, items B, options C, reviews_info D , categorys E
+				WHERE
+					A.opt_no = C.OPT_NO
+					and B.item_no = c.item_no	
+					and A.review_no = D.review_no
+					and B.cate_no = E.cate_no
+				<dynamic>
+					<isNotNull property="option1">
+						<isEqual property="option1" compareValue="male">
+							and d.info_sex = 'male'
+						</isEqual>
+						<isEqual property="option1" compareValue="female">
+							and d.info_sex = 'female'
+						</isEqual>
+					</isNotNull>
+					<isNotNull property="option2">
+						<isEqual property="option2" compareValue="10">
+							and d.info_age >= 0
+							and d.info_age &lt; 20
+						</isEqual>
+						<isEqual property="option2" compareValue="20">
+							and d.info_age >= 20
+							and d.info_age &lt; 30
+						</isEqual>
+						<isEqual property="option2" compareValue="30">
+							and d.info_age >= 30
+							and d.info_age &lt; 40
+						</isEqual>
+						<isEqual property="option2" compareValue="40">
+							and d.info_age >= 40
+							and d.info_age &lt; 50
+						</isEqual>
+						<isEqual property="option2" compareValue="50">
+							and d.info_age >= 50
+						</isEqual>
+					</isNotNull>
+					<isNotNull property="option3">
+						<isEqual property="option3" compareValue="130">
+							and d.info_height &lt; 130
+						</isEqual>
+						<isEqual property="option3" compareValue="140">
+							and d.info_height >= 140
+							and d.info_height &lt; 150
+						</isEqual>
+						<isEqual property="option3" compareValue="150">
+							and d.info_height >= 150
+							and d.info_height &lt; 160
+						</isEqual>
+						<isEqual property="option3" compareValue="160">
+							and d.info_height >= 160
+							and d.info_height &lt; 170
+						</isEqual>
+						<isEqual property="option3" compareValue="170">
+							and d.info_height >= 170
+							and d.info_height &lt; 180
+						</isEqual>
+						<isEqual property="option3" compareValue="180">
+							and d.info_height >= 180
+							and d.info_height &lt; 190
+						</isEqual>
+						<isEqual property="option3" compareValue="190">
+							and d.info_height >= 190
+						</isEqual>
+					</isNotNull>
+					<isNotNull property="option4">
+						<isEqual property="option4" compareValue="30">
+							and d.info_weight &lt; 40
+						</isEqual>
+						<isEqual property="option4" compareValue="40">
+							and d.info_weight >= 40
+							and d.info_weight &lt; 50
+						</isEqual>
+						<isEqual property="option4" compareValue="50">
+							and d.info_weight >= 50
+							and d.info_weight &lt; 60
+						</isEqual>
+						<isEqual property="option4" compareValue="60">
+							and d.info_weight >= 60
+							and d.info_weight &lt; 70
+						</isEqual>
+						<isEqual property="option4" compareValue="70">
+							and d.info_weight >= 70
+							and d.info_weight &lt; 80
+						</isEqual>
+						<isEqual property="option4" compareValue="80">
+							and d.info_weight >= 80
+							and d.info_weight &lt; 90
+						</isEqual>
+						<isEqual property="option4" compareValue="90">
+							and d.info_weight >= 90
+						</isEqual>
+					</isNotNull>
+					<isNotNull property="option5">
+						<isEqual property="option5" compareValue="90">
+							and d.info_size = 90
+						</isEqual>
+						<isEqual property="option5" compareValue="95">
+							and d.info_size = 95
+						</isEqual>
+						<isEqual property="option5" compareValue="100">
+							and d.info_size = 100
+						</isEqual>
+						<isEqual property="option5" compareValue="105">
+							and d.info_size = 105
+						</isEqual>
+						<isEqual property="option5" compareValue="110">
+							and d.info_size = 110
+						</isEqual>
+					</isNotNull>
+					<isNotEmpty property="category"> 
+						and E.cate_no in (
+											select
+												E.cate_no
+											from
+												categorys
+											where
+												E.cate_sub_no = #category#		
+											)
+					</isNotEmpty>
+				
+					<isNotNull property="keyword">
+							and
+							(B.item_name like '%' || #keyword# || '%'
+								or 
+							A.review_contents like '%' || #keyword# || '%')
+					</isNotNull>
+				</dynamic>		
+		)
+		
+	
+	</select>
+	
+	<select id="getAllofPhotoReviews" resultClass="kr.co.team2.vo.PhotoReviews">
+		select 
+			A.review_no				as no,
+			A.review_photo 			as photo,
+			A.review_contents		as contents,
+			A.Review_create_date	as createDate,
+			A.Review_score			as score,
+			A.review_counts			as counts,
+			A.user_no				as "user.no"
+		
+		from 
+			reviews A, items B, options C
+		WHERE
+			A.opt_no = C.OPT_NO
+			and B.item_no = c.item_no	
+		order by 
+			A.REVIEW_CREATE_DATE desc
+	
+	
+	</select>
+
+	<select id="getAllPhotoReviews" resultClass="kr.co.team2.vo.Review">
+		<!-- 포토리뷰 페이지에 뿌려 줄 모든 리뷰 정보 가져오기 -->
+		select 
+			review_no			as no,
+			review_contents		as contents,
+			review_photo		as photo,
+			review_counts		as count,
+			review_create_date	as createDate,
+			review_score		as score,
+			user_no				as "user.no",
+			opt_no				as "option.no"
+		from reviews
+	
+	</select>
+	
+	<select id="getAllReviewsByReviewNo" parameterClass="int" resultClass="kr.co.team2.vo.AllReviews">
+		select 
+			A.item_no		as no, 
+			A.item_name		as name,
+			A.item_price	as price, 
+			A.item_image	as image 
+		from 
+			ITEMS A, OPTIONS B, REVIEWS C
+		where 
+			A.item_no = B.ITEM_NO
+			and b.opt_no = c.opt_no
+			and review_no = #value#
+	</select>
+
+	<select id="getAllAllReviews" resultClass="kr.co.team2.vo.AllReviews">
+		select distinct 
+			A.item_no		as no, 
+			A.item_name		as name, 
+			A.item_price	as price, 
+			A.ITEM_IMAGE	as image
+		from 
+			items A, options B, reviews C
+		where 
+			A.ITEM_NO = B.ITEM_NO
+			and B.OPT_NO = C.OPT_NO
+	</select>
+	
+	<select id="getAllReviewsByCriteria" parameterClass="kr.co.team2.vo.Criteria" resultClass="kr.co.team2.vo.AllReviews">
+		select
+			no, name, price, image
+		from
+			(
+				select
+		 			<dynamic>
+						<isEqual property="sort" compareValue="recent">
+							row_number() over (order by B.review_create_date desc) rn,
+						</isEqual>
+						<isEqual property="sort" compareValue="likes">
+							row_number() over (order by A.item_price desc) rn,
+						</isEqual>
+						<isEqual property="sort" compareValue="count">
+							row_number() over (order by B.review_score desc) rn,
+						</isEqual>
+						
+					</dynamic>
+	 				A.item_no		as no,
+	 				A.item_name		as name,
+	 				A.item_price	as price,
+	 				A.item_image	as image,
+	 				B.review_score	as score,
+	 				B.review_counts	as count,
+	 				B.review_likes	as likes
+				from 
+					items A, reviews B
+				where 
+					A.item_recent_review_no = B.review_no
+				<dynamic>
+					<isNotEmpty property="price"> 
+						<isEqual property="price" compareValue="1m">
+							and A.item_price &lt;10000
+						</isEqual>
+						<isEqual property="price" compareValue="2m">
+							and A.item_price &lt;30000
+							and A.item_price >= 10000
+						</isEqual>
+						<isEqual property="price" compareValue="3m">
+							and A.item_price &lt;50000
+							and A.item_price >= 30000
+						</isEqual>
+						<isEqual property="price" compareValue="4m">
+							and A.item_price &lt;100000
+							and A.item_price >= 50000
+						</isEqual>
+						<isEqual property="price" compareValue="5m">
+							and A.item_price >=100000
+						</isEqual>
+					</isNotEmpty>
+					<isNotNull property="keyword">
+							and
+							(A.item_name like '%' || #keyword# || '%'
+								or 
+							B.review_contents like '%' || #keyword# || '%')
+					</isNotNull>
+				</dynamic>	
+					
+			)
+		where
+			rn >= #beginIndex# and rn &lt;= #endIndex#	
+			
+	</select>
+	
+	<select id="getAllReviewsCount" parameterClass="kr.co.team2.vo.Criteria" resultClass="int">
+		select
+			count(*)
+		from
+			(
+				select
+		 			<dynamic>
+						<isEqual property="sort" compareValue="score">
+							row_number() over (order by B.review_score desc) rn,
+						</isEqual>
+						<isEqual property="sort" compareValue="likes">
+							row_number() over (order by B.review_likes desc) rn,
+						</isEqual>
+						<isEqual property="sort" compareValue="recent">
+							row_number() over (order by B.review_create_date desc) rn,
+						</isEqual>
+						
+					</dynamic>
+	 				A.item_no		as no,
+	 				A.item_name		as name,
+	 				A.item_price	as price,
+	 				A.item_image	as image,
+	 				B.review_score	as score,
+	 				B.review_counts	as count,
+	 				B.review_likes	as likes
+				from 
+					items A, reviews B
+				where 
+					A.item_recent_review_no = B.review_no
+				<dynamic>
+					<isNotEmpty property="price"> 
+						<isEqual property="price" compareValue="1m">
+							and A.item_price &lt;10000
+						</isEqual>
+						<isEqual property="price" compareValue="2m">
+							and A.item_price &lt;30000
+							and A.item_price >= 10000
+						</isEqual>
+						<isEqual property="price" compareValue="3m">
+							and A.item_price &lt;50000
+							and A.item_price >= 30000
+						</isEqual>
+						<isEqual property="price" compareValue="4m">
+							and A.item_price &lt;100000
+							and A.item_price >= 50000
+						</isEqual>
+						<isEqual property="price" compareValue="5m">
+							and A.item_price >=100000
+						</isEqual>
+					</isNotEmpty>
+					<isNotNull property="keyword">
+							and
+							(A.item_name like '%' || #keyword# || '%'
+								or 
+							B.review_contents like '%' || #keyword# || '%')
+					</isNotNull>
+				</dynamic>		
+			)
+				
+	</select>
+
+	<select id="getAllReviewsByItemNo" parameterClass="int" resultClass="kr.co.team2.vo.Review">
+		select 
+			B.item_no			as "item.no",
+			B.item_image		as "item.image",
+			B.item_name			as "item.name",	
+			B.item_price		as "item.price",
+			C.review_score		as score,
+			C.review_counts		as count,
+			C.review_photo		as photo,
+			C.review_no			as no,
+			C.review_contents	as contents
+		from options A, items B, reviews C
+		where 
+			A.item_no = B.item_no
+			and C.opt_no = A.opt_no
+			and b.item_no = #value#
+		order by c.review_no
+	
+	</select>
+	
+	<select id="getAllReviewsByItemNoTop3" parameterClass="int" resultClass="kr.co.team2.vo.Review">
+	
+			select 
+				B.item_no			as "item.no",
+				B.item_image		as "item.image",
+				B.item_name			as "item.name",	
+				B.item_price		as "item.price",
+				C.review_score		as score,
+				C.review_counts		as count,
+				C.review_photo		as photo,
+				C.review_no			as no,
+				C.review_contents	as contents
+			from options A, items B, reviews C
+			where 
+				A.item_no = B.item_no
+				and C.opt_no = A.opt_no
+				and b.item_no = #value#
+			order by c.review_score desc
+	
+	</select>
+	
+	<select id="getMyReviewsByCriteriaOnReviewDao" parameterClass="kr.co.team2.vo.Criteria" resultClass="kr.co.team2.vo.Review">
+		select 
+		    r.REVIEW_NO             as no,
+		    r.REVIEW_CONTENTS       as contents,
+		    r.REVIEW_PHOTO          as photo,
+		    r.REVIEW_COUNTS         as count,
+		    r.REVIEW_CREATE_DATE    as createDate,
+		    u.USER_NO               as "user.no",
+		    u.user_name             as "user.name"
+		from
+		    reviews r, users u
+		where 
+		    r.user_no = u.user_no
+		    and u.user_no = #no#
+		<dynamic>
+			<isNotNull>
+				<isEqual property="opt" compareValue="title">
+					and r.REVIEW_CONTENTS like '%'|| #keyword# ||'%'
+				</isEqual>
+				<isEqual property="opt" compareValue="content">
+					and r.REVIEW_CONTENTS like '%'|| #keyword#|| '%'
+				</isEqual>
+				<isEqual property="opt" compareValue="write">
+					and u.user_name  like '%' || upper(#keyword#) || '%'
+				</isEqual>
+			</isNotNull>
+		</dynamic>
+		order by r.REVIEW_CREATE_DATE desc
+	</select>
+
+</sqlMap>

@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap>
+	<insert id = "saveUser" parameterClass="kr.co.team2.vo.User">
+		insert into users USER_QUESTION_NO
+			(user_no, user_id, user_password, user_name, user_gender, USER_BIRTHDAY, question_no, user_answer, USER_ADDRESS1, USER_ADDRESS2,
+			 user_tel, user_phone, user_email, user_postcode)
+		values
+			(user_no_seq.nextval, #id#, #password#, #name#, #gender#, #birthDay#, #userQuestion.no#, #answer#, #address1#, #address2#, #tel#, #phoneTel#, #email#, #postcode#)
+	</insert>
+	
+	
+	<select id="UserQuestionByDb" resultClass="kr.co.team2.vo.UserQuestion">
+		select 
+			QUESTION_NO as no,
+			QUESTION_TEXT as textQustion
+		from 
+			USER_QUESTIONS
+	</select>
+	
+	<select id="getUserById" parameterClass="string" resultClass="kr.co.team2.vo.User">
+		SELECT
+			USER_NO as no,
+			USER_ID as id,
+			USER_PASSWORD as password,
+			USER_NAME as name,
+			USER_BIRTHDAY as birthDay,
+			USER_ANSWER as answer,
+			USER_ADDRESS1 as address1,
+			USER_ADDRESS2 as address2,
+			USER_TEL as tel,
+			USER_PHONE as phoneTel,
+			USER_EMAIL as email,
+			USER_AVAILABLE as available,
+			USER_CREATE_DATE as createDate,
+			user_postcode as postcode
+		FROM
+			USERS
+		WHERE
+			user_id = #value#
+	</select>
+	<select id="getUserByNo" parameterClass="int" resultClass="kr.co.team2.vo.User">
+		SELECT
+			USER_NO as no,
+			USER_ID as id,
+			USER_PASSWORD as password,
+			USER_NAME as name,
+			USER_BIRTHDAY as birthDay,
+			USER_ANSWER as answer,
+			USER_ADDRESS1 as address1,
+			USER_ADDRESS2 as address2,
+			USER_TEL as tel,
+			USER_PHONE as phoneTel,
+			USER_EMAIL as email,
+			USER_AVAILABLE as available,
+			USER_CREATE_DATE as createDate,
+			user_postcode as postcode
+		FROM
+			USERS
+		WHERE
+			user_no = #value#
+		and
+			USER_AVAILABLE = 'Y'
+	</select>
+	<select id="getUserByNonQuestion" parameterClass="int" resultClass="kr.co.team2.vo.User">
+		SELECT
+			U.USER_NO as no,
+			U.USER_ID as id,
+			U.USER_PASSWORD as password,
+			U.USER_NAME as name,
+			Q.QUESTION_NO as "userQuestion.no",
+			Q.QUESTION_TEXT as "userQuestion.textQustion",
+			U.USER_ANSWER as answer,
+			U.USER_EMAIL as email,
+			U.USER_AVAILABLE as available
+		FROM
+			USER_QUESTIONS Q, USERS U
+		WHERE
+			U.QUESTION_NO = Q.QUESTION_NO
+		AND	
+			user_no = #value#
+		and
+			USER_AVAILABLE = 'Y'
+	</select>
+	<update id="changeUserPassword" parameterClass="kr.co.team2.vo.User">
+		update
+			users
+		set
+			user_password = #password#
+		where
+			user_no = #no#
+	</update>
+	
+	<update id="modifyUser" parameterClass="kr.co.team2.vo.User">
+		update
+			users
+		set
+			user_id = #id#,
+			user_password = #password#,
+			user_name = #name#,
+			user_address1 = #address1#,
+			user_address2 = #address2#,
+			user_tel = #tel#,
+			user_phone = #phoneTel#,
+			user_email = #email#,
+			user_postcode = #postcode#
+		where
+			user_no = #no#
+	</update>
+	
+	
+	
+	<select id="UserQuestionByNo" parameterClass="int" resultClass="kr.co.team2.vo.UserQuestion">
+		SELECT
+			q.QUESTION_NO as no,
+			q.QUESTION_TEXT as textQuestion
+		FROM
+			USER_QUESTIONS q, USERS u	
+		WHERE
+			u.QUESTION_NO = q.QUESTION_NO
+		and
+		u.USER_NO = #value#
+	</select>
+	
+	<select id="findUserId" parameterClass="kr.co.team2.vo.User" resultClass="kr.co.team2.vo.User">
+		SELECT
+				user_no	as no,
+				USER_ID as id,
+				user_name	as name,
+				user_email	as email
+		FROM
+				users
+		WHERE
+			USER_NAME = #name#
+		AND
+			USER_EMAIL = #email#
+	</select>
+	
+	<select id="findUserQuestion" parameterClass="kr.co.team2.vo.User" resultClass="kr.co.team2.vo.User">
+		SELECT
+			  u.user_no as no,
+			  u.USER_ID as id,
+			  u.user_name as name,
+			  u.user_email as email,
+			  u.USER_ANSWER as answer,
+			  q.QUESTION_NO as noQ,
+			  q.QUESTION_TEXT as textQuestion
+		FROM
+			  USER_QUESTIONS q, USERS u	
+		WHERE
+			  u.QUESTION_NO = q.QUESTION_NO
+		and
+			  u.USER_id = #id#
+		AND
+			  u.user_name = #name#
+		AND
+			  u.user_email = #email#
+	</select>
+	
+	<update id="userDeleteInfo" parameterClass="int">
+		UPDATE
+			users 
+		SET
+			USER_AVAILABLE = 'N'
+		WHERE
+			USER_NO = #no#
+	</update>
+	
+	
+</sqlMap>
+  	

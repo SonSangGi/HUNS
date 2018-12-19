@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap>
+	
+	<!-- 전체 아이템 카운트-->
+	<select id="getAllItemsCount" resultClass="int">
+		select
+			count(*)
+		from items A,categorys B 
+      	where A.cate_no = B.cate_no  
+	</select>
+	
+	<!-- 전체 아이템 조회 -->
+	<select id="getAllItems" resultClass="kr.co.team2.vo.Item" parameterClass="String">
+		select
+			A.ITEM_NO 						as no,
+			A.ITEM_NAME 					as name,
+			A.ITEM_CONTENTS 				as contents,
+			A.ITEM_PRICE 					as price,
+			A.ITEM_DISPLAY_AVAILABLE 		as displayAvailable,
+			A.ITEM_SELL_AVAILABLE 			as sellAvailable,
+			A.ITEM_CURRENT_DISCOUNT 		as currentDiscount,
+			A.ITEM_CREATE_DATE 				as createDate,
+			A.CATE_NO 						as "category.no",
+			A.ITEM_IMAGE 					as image
+		from
+			items A
+		order by
+			A.ITEM_CREATE_DATE desc
+		<isParameterPresent>
+		where ITEM_NAME = "value"
+		</isParameterPresent>
+	</select>
+	
+	<select id="getItemByCriteria" parameterClass="kr.co.team2.vo.Criteria" resultClass="kr.co.team2.vo.Item">
+	select *
+	from (
+		select row_number() over (order by A.item_create_date desc) as rn,
+            A.item_no                      as no, 
+        	A.item_name                    as name, 
+    		A.item_contents                as contents,
+			A.item_price                   as price, 
+			A.ITEM_CURRENT_DISCOUNT		   as currentDiscount,
+			A.item_image                   as image,
+			A.item_create_date             as createDate
+        from items A,categorys B
+      	where A.cate_no = B.cate_no  
+    	<isNotNull property="keyword">
+    		and item_name like '%' || #keyword# || '%'
+    	</isNotNull>
+    	<isNotEqual property="displayAvailable" compareValue="A">
+    		<isEqual property="displayAvailable" compareValue="Y">
+    		and A.ITEM_DISPLAY_AVAILABLE = 'Y'
+    		</isEqual>
+    		<isEqual property="displayAvailable" compareValue="N">
+    		and A.ITEM_DISPLAY_AVAILABLE = 'N'
+    		</isEqual>
+    	</isNotEqual>
+    	<isNotEqual property="sellAvailable" compareValue="A">
+    		<isEqual property="sellAvailable" compareValue="Y">
+    		and A.ITEM_SELL_AVAILABLE = 'Y'
+    		</isEqual>
+    		<isEqual property="sellAvailable" compareValue="N">
+    		and A.ITEM_SELL_AVAILABLE = 'N'
+    		</isEqual>
+    	</isNotEqual>
+    	<isNotEqual property="no" compareValue="0">
+    		and B.CATE_SUB_NO = #no#
+    		<isNotEqual property="subCategory" compareValue="0">
+    			and A.CATE_NO = #subCategory#
+    		</isNotEqual>
+    	</isNotEqual>
+    	<isNotNull property="firstDate">
+    		<isNotNull property="lastDate">
+    			and A.ITEM_CREATE_DATE >= #firstDate#
+    			and A.ITEM_CREATE_DATE &lt;= #lastDate#
+    		</isNotNull>
+    	</isNotNull>
+		)
+		where rn >= #beginIndex# and rn &lt;= #endIndex#
+	</select>
+	<!-- 아이템 번호로 조회 -->
+	<select id="getItemByN" resultClass="kr.co.team2.vo.Item"
+		parameterClass="int">
+		select
+			ITEM_NO 						as no,
+			ITEM_NAME						as name,
+			ITEM_CONTENTS 					as contents,
+			ITEM_PRICE 						as price,
+			ITEM_DISPLAY_AVAILABLE 			as displayAvailable,
+			ITEM_SELL_AVAILABLE 			as sellAvailable,
+			ITEM_CURRENT_DISCOUNT 			as currentDiscount,
+			ITEM_CREATE_DATE 				as createDate,
+			CATE_NO 						as "category.no",
+			ITEM_IMAGE 						as image
+		from
+			items
+		where
+			ITEM_NO = #value#
+	</select>
+	<!-- 상위 카테고리 조회 -->
+	<select id="getTopCategorys"
+		resultClass="kr.co.team2.vo.Category">
+		select
+			CATE_NO 		as no,
+			CATE_CONTENTS 	as contents
+		from
+			CATEGORYS
+		where
+			CATE_SUB_NO is null
+		order by
+			CATE_CONTENTS
+	</select>
+
+	<!-- 하위 카테고리 조회 -->
+	<select id="getChildCategotys"
+		resultClass="kr.co.team2.vo.Category" parameterClass="int">
+		select
+			CATE_NO 		as no,
+			CATE_CONTENTS 	as contents
+		from
+			CATEGORYS
+		where
+			CATE_SUB_NO = #value#
+		order by
+			CATE_CONTENTS
+	</select>
+
+	<select id="getCateByN" resultClass="kr.co.team2.vo.Category"
+		parameterClass="int">
+		select
+			CATE_NO 			as no,
+			CATE_CONTENTS 		as contents
+		from
+			CATEGORYS
+		where
+			CATE_NO = #value#
+		order by
+			CATE_CONTENTS
+	</select>
+
+	<!-- 옵션 조회 -->
+	<select id="getAllOptions" resultClass="kr.co.team2.vo.Option">
+		select
+			OPT_NO 				as no,
+			OPT_COLOR 			as color,
+			OPT_SIZE 			as "size",
+			OPT_STOCK 			as stock,
+			OPT_CURRENT_PRICE 	as currentPrice,
+			OPT_SELL_AVAILABLE 	as sellAvailable,
+			ITEM_NO 			as "item.no"
+		from
+			OPTIONS
+		order by
+			OPT_COLOR
+	</select>
+
+	<!-- 아이템번호로 옵션 조회 -->
+	<select id="getOptionByItemN"
+		resultClass="kr.co.team2.vo.Option" parameterClass="int">
+		select
+			OPT_NO 					as no,
+			OPT_COLOR 				as color,
+			OPT_SIZE 				as "size",
+			OPT_STOCK 				as stock,
+			OPT_CURRENT_PRICE 		as currentPrice,
+			OPT_SELL_AVAILABLE 		as sellAvailable,
+			ITEM_NO 				as "item.no"
+		from
+			OPTIONS
+		where
+			ITEM_NO = #value#
+		and
+			OPT_SELL_AVAILABLE = 'Y'
+		order by
+			OPT_COLOR
+	</select>
+	<!-- 옵션번호로 옵션 조회 -->
+	<select id="getOptionByOptN" resultClass="kr.co.team2.vo.Option" parameterClass="int">
+		select
+			OPT_NO 					as no,
+			OPT_COLOR 				as color,
+			OPT_SIZE 				as "size",
+			OPT_STOCK 				as stock,
+			OPT_CURRENT_PRICE 		as currentPrice,
+			OPT_SELL_AVAILABLE 		as sellAvailable,
+			ITEM_NO 				as "item.no"
+		from
+			OPTIONS
+		where
+			OPT_NO = #value#
+		order by
+			OPT_COLOR
+	</select>
+	
+	<select id="getDistincetColorByItemNo" resultClass="String" parameterClass="int">
+		select distinct 
+			OPT_COLOR 				
+		from
+			OPTIONS
+		where
+			ITEM_NO = #value#
+		and
+			OPT_SELL_AVAILABLE = 'Y'
+		order by
+			OPT_COLOR
+	</select>
+	
+	<select id="getDistincetSizeByItemNo" resultClass="String" parameterClass="int">
+		select distinct 
+			OPT_COLOR 			
+		from
+			OPTIONS
+		where
+			ITEM_NO = #value#
+		and
+			OPT_SELL_AVAILABLE = 'Y'
+		order by
+			OPT_COLOR
+	</select>
+	<!-- 아이템 생성 -->
+	<insert id="addItem" parameterClass="kr.co.team2.vo.Item">
+		insert into ITEMS(
+			ITEM_NO,
+			ITEM_NAME,
+			ITEM_CONTENTS,
+			ITEM_PRICE,
+			ITEM_DISPLAY_AVAILABLE,
+			ITEM_SELL_AVAILABLE,
+			ITEM_CURRENT_DISCOUNT,
+			ITEM_CREATE_DATE,
+			CATE_NO,
+		ITEM_IMAGE)
+			values(#no#,#name#,#contents#,#price#,#displayAvailable#,#sellAvailable#,#currentDiscount#,sysdate,#category.no#,#image#)
+	</insert>
+	
+	<!-- 아이템 시퀀스 조회 -->
+	<select id="getItemSEQ" resultClass="int">
+		select ITEM_NO_SEQ.nextval
+		from dual
+	</select>
+
+	<!-- 옵션 생성 -->
+	<insert id="addOption" parameterClass="kr.co.team2.vo.Option">
+		insert into
+			OPTIONS(
+			OPT_NO,
+			OPT_COLOR,
+			OPT_SIZE,
+			OPT_STOCK,
+			OPT_CURRENT_PRICE,
+			OPT_SELL_AVAILABLE,
+			ITEM_NO)
+		values(option_no_seq.nextval,#color#,#size#,#stock#,#currentPrice#,'Y',#item.no#)
+	</insert>
+	
+	<!-- 카테고리 생성 -->
+	<insert id="addChildCategory"
+		parameterClass="kr.co.team2.vo.Category">
+		insert into CATEGORYS(
+			CATE_NO,
+			CATE_CONTENTS,
+			CATE_SUB_NO)
+		values(cate_no_seq.nextval,#contents#,#subNo#)
+	</insert>
+	
+	<!-- 부모 카테고리 생성 -->
+	<insert id="addParentsCategory"
+		parameterClass="kr.co.team2.vo.Category">
+		insert into CATEGORYS(
+			CATE_NO,
+			CATE_CONTENTS,
+			CATE_SUB_NO)
+		values(cate_no_seq.nextval,#contents#,null)
+	</insert>
+
+	<!-- 카테고리 삭제 -->
+	<delete id="deleteChildCategory" parameterClass="int">
+		delete from CATEGORYS where 
+		CATE_NO = #value#
+	</delete>
+	
+	<!-- 아이템 삭제 -->
+	<delete id="deleteItem" parameterClass="int">
+		delete from ITEMS where
+		ITEM_NO = #value#
+	</delete>
+	
+	<!-- 아이템번호로 옵션 삭제 -->
+	<delete id="deleteOptionByItemNo" parameterClass="int">
+		delete from OPTIONS where
+		ITEM_NO = #value#
+	</delete>
+	
+	<!-- 아이템번호로 옵션 변경 -->
+	<update id="deleteOptionByOptNo" parameterClass="int">
+		update OPTIONS set
+			 OPT_SELL_AVAILABLE	= 'N'
+		where
+			OPT_NO = #value#
+	</update>
+	<!-- 아이템 업데이트 -->
+	<update id="updateItem" parameterClass="kr.co.team2.vo.Item">
+		update items set
+                ITEM_NAME 				= #name#,
+                ITEM_CONTENTS 			= #contents#,
+                ITEM_PRICE 				= #price#,
+                ITEM_DISPLAY_AVAILABLE	= #displayAvailable#,
+                ITEM_SELL_AVAILABLE		= #sellAvailable#,
+                ITEM_CURRENT_DISCOUNT	= #currentDiscount#,
+                CATE_NO					= #category.no#,
+                ITEM_IMAGE				= #image#
+		where
+                ITEM_NO = #no#
+	</update>
+	
+	
+	<!--                  기타                         -->
+	
+	<!-- 미답변 문의 카운트 조회 -->
+	<select id="getNotAnswerCount" resultClass="int">
+	select
+		count(*)
+	from
+		ITEM_QUESTIONS
+	where
+		ITEM_QUESTION_NO not in
+	(select	ITEM_QUESTION_NO from ITEM_QUESTION_COMMENTS group by ITEM_QUESTION_NO)
+	</select>
+		<!-- 리뷰 카운트 조회 -->
+	<select id="getTodayReviewCount" resultClass="int">
+		select count(*)
+		from REVIEWS
+		where to_char(review_create_date,'yyMMdd') = to_char(sysdate,'yyMMdd')
+	</select>
+	
+	
+		<!-- 미답변 문의 조회 -->
+	<select id="getNotAnswerQuestion" resultClass="kr.co.team2.vo.ItemQuestion">
+	select 
+			ITEM_QUESTION_AVAILABLE 	as available,
+			ITEM_QUESTION_CONTENTS 		as contents,
+			ITEM_QUESTION_CREATE_DATE	as createDate,
+			ITEM_QUESTION_FILENAME		as filename,
+			ITEM_QUESTION_SECRET		as secret,
+			ITEM_QUESTION_NO			as no,
+			ITEM_QUESTION_TITLE			as title,
+			ITEM_QUESTION_TYPE_NO		as "itemQuestionType.no",
+			USER_NO						as "user.no"
+	from
+		ITEM_QUESTIONS
+	where
+		ITEM_QUESTION_NO not in
+	(select	ITEM_QUESTION_NO from ITEM_QUESTION_COMMENTS group by ITEM_QUESTION_NO)
+	order by
+		ITEM_QUESTION_CREATE_DATE desc
+	</select>
+	
+			<!-- 답변한 문의 조회 -->
+	<select id="getAnsweredQuestion" resultClass="kr.co.team2.vo.ItemQuestion">
+	select 
+			ITEM_QUESTION_AVAILABLE 	as available,
+			ITEM_QUESTION_CONTENTS 		as contents,
+			ITEM_QUESTION_CREATE_DATE	as createDate,
+			ITEM_QUESTION_FILENAME		as filename,
+			ITEM_QUESTION_SECRET		as secret,
+			ITEM_QUESTION_NO			as no,
+			ITEM_QUESTION_TITLE			as title,
+			ITEM_QUESTION_TYPE_NO		as "itemQuestionType.no",
+			USER_NO						as "user.no"
+	from
+		ITEM_QUESTIONS
+	where
+		ITEM_QUESTION_NO in
+	(select	ITEM_QUESTION_NO from ITEM_QUESTION_COMMENTS group by ITEM_QUESTION_NO)
+	order by
+		ITEM_QUESTION_CREATE_DATE desc
+	</select>
+	<!-- 아이템 문의 타입 번호로 조회 -->
+	<select id="getQuestionTypeByNo" resultClass="String" parameterClass="int">
+		select 
+			ITEM_QUESTION_TYPE_CONTENTS as contents
+		from 
+			ITEM_QUESTION_TYPES
+		where 
+			ITEM_QUESTION_TYPE_NO = #value#
+	</select>
+</sqlMap>

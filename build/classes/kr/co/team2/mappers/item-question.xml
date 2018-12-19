@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap>
+	<!-- 게시판 업데이트 -->
+	<update id="updateItemQuestion" parameterClass="kr.co.team2.vo.ItemQuestion">
+		update
+			ITEM_QUESTIONS
+		set
+			ITEM_QUESTION_TITLE			= #title#,
+			ITEM_QUESTION_CONTENTS		= #contents#,
+			ITEM_QUESTION_FILENAME		= #filename#,
+			ITEM_QUESTION_SECRET		= #secret#,
+			ITEM_QUESTION_AVAILABLE		= #available#,
+			ITEM_QUESTION_TYPE_NO		= #itemQuestionType.no#,
+			item_no						= #item.no#
+		where
+			ITEM_QUESTION_NO = #no#
+			
+	
+	</update>
+	<!-- 상품명 업데이트 -->
+	
+	<!-- 게시판 추가 -->
+	<insert id="addItemQuestion" parameterClass="kr.co.team2.vo.ItemQuestion">
+		insert into item_questions
+			(item_question_no,
+			ITEM_QUESTION_TITLE,
+			ITEM_QUESTION_CONTENTS,
+			ITEM_QUESTION_FILENAME,
+			ITEM_QUESTION_SECRET,
+			ITEM_QUESTION_TYPE_NO,
+			user_no,
+			item_no
+			)
+		values
+			(item_questions_seq.nextval,#title#,#contents#,#filename#,#secret#,#title#,#user.no#,#item.no#)
+	</insert>
+	<!-- 게시판 리스트 -->	
+	<select id="getBoardListAll" resultClass="kr.co.team2.vo.ItemQuestion">
+		 select 
+			i.ITEM_QUESTION_NO				as no,
+			i.ITEM_QUESTION_TITLE			as title,
+			i.ITEM_QUESTION_CONTENTS		as contents,
+			i.ITEM_QUESTION_FILENAME		as filename,
+			i.ITEM_QUESTION_SECRET			as secret,
+			u.user_name						as "user.name",
+			u.user_no						as "user.no",
+			u.user_id						as "user.id",
+			i.ITEM_QUESTION_AVAILABLE		as available,
+			t.ITEM_QUESTION_TYPE_NO			as "itemQuestionType.no",
+			t.ITEM_QUESTION_TYPE_CONTENTS	as "itemQuestionType.contents",
+			i.ITEM_QUESTION_CREATE_DATE 	as createDate,
+			m.item_name						as "item.name"
+		from item_questions i , users u , ITEM_QUESTION_TYPES t , items m
+		where
+            i.user_no = u.user_no
+            and i.item_no = m.item_no
+            and i.ITEM_QUESTION_TYPE_NO = t.ITEM_QUESTION_TYPE_NO
+            and	upper(i.ITEM_QUESTION_AVAILABLE) = 'Y'
+		order by  i.ITEM_QUESTION_CREATE_DATE desc
+	</select>
+	
+	<select id="getBoardByNo" parameterClass="int" resultClass="kr.co.team2.vo.ItemQuestion">
+		select 
+			i.ITEM_QUESTION_NO				as no,
+			i.ITEM_QUESTION_TITLE			as title,
+			i.ITEM_QUESTION_CONTENTS		as contents,
+			i.ITEM_QUESTION_FILENAME		as filename,
+			i.ITEM_QUESTION_SECRET			as secret,
+			u.user_name						as "user.name",
+			u.user_no						as "user.no",
+			u.user_id						as "user.id",
+			i.ITEM_QUESTION_AVAILABLE		as available,
+			t.ITEM_QUESTION_TYPE_NO			as "itemQuestionType.no",
+			t.ITEM_QUESTION_TYPE_CONTENTS	as "itemQuestionType.contents",
+			i.ITEM_QUESTION_CREATE_DATE 	as createDate,
+			m.item_name						as "item.name",
+			m.item_no						as "item.no"
+		from item_questions i , users u , ITEM_QUESTION_TYPES t , items m
+		where
+            i.user_no = u.user_no
+            and i.item_no = m.item_no
+            and i.ITEM_QUESTION_TYPE_NO = t.ITEM_QUESTION_TYPE_NO
+            and	upper(i.ITEM_QUESTION_AVAILABLE) = 'Y'
+            
+			and i.ITEM_QUESTION_NO = #value#
+	</select>
+	<select id="getquestionByCategoryType" resultClass="kr.co.team2.vo.ItemQuestionType">
+		select 
+			ITEM_QUESTION_TYPE_NO				as no,
+			ITEM_QUESTION_TYPE_CONTENTS 		as contents
+		from 
+			ITEM_QUESTION_TYPES
+	</select>
+	
+	<!-- 댓글 -->
+	<select id="getItemQuestionComment" parameterClass="kr.co.team2.vo.Criteria" resultClass="kr.co.team2.vo.ItemQuestionComment">
+		
+		select * 
+		from( 
+			select 
+				row_number() over (order by c.COMMENT_CREATE_DATE desc) rn,
+				c.ITEM_QUESTION_NO						as	"itemQuestion.no",
+				c.ITEM_QUESTION_COMMENT_CONTENTS		as 	contents,
+				c.COMMENT_CREATE_DATE					as createDate,
+				c.ITEM_COMMENT_AVAILABLE				as available,
+				c.ITEM_QUESTION_COMMENT_NAME			as name
+			from ITEM_QUESTIONS o , ITEM_QUESTION_COMMENTS c
+			where o.item_question_no = c.Item_question_no
+			and c.ITEM_COMMENT_AVAILABLE = 'Y'
+			and c.ITEM_QUESTION_NO = #no#)
+		where
+			rn >= #beginIndex# and rn &lt;= #endIndex#
+		
+	</select> 
+	
+	<!-- 댓글 추가 -->
+	<insert id="addItemQuestionComment" parameterClass="kr.co.team2.vo.ItemQuestionComment">
+		insert into ITEM_QUESTION_COMMENTS
+		(ITEM_QUESTION_NO, ITEM_QUESTION_COMMENT_CONTENTS,ITEM_QUESTION_COMMENT_NO,ITEM_QUESTION_COMMENT_NAME)
+		values
+		(#itemQuestion.no#,#contents#,ITEM_QUESTION_COMMENTs_seq.nextval,#name#)
+	
+	</insert>
+	<!-- 댓글 총 수  -->
+	<select id="getCommentCount" parameterClass="int" resultClass="int">
+		select count(*)
+		from 
+			ITEM_QUESTIONS o , ITEM_QUESTION_COMMENTS c
+		where 
+			o.item_question_no = c.Item_question_no
+			and c.ITEM_COMMENT_AVAILABLE = 'Y'
+			and c.ITEM_QUESTION_NO = #value#
+	</select>
+	
+	<select id="getQuestionByTypeNo" parameterClass="int" resultClass="kr.co.team2.vo.ItemQuestionType">
+		select 
+			ITEM_QUESTION_TYPE_NO				as no,
+			ITEM_QUESTION_TYPE_CONTENTS 		as contents
+		from 
+			ITEM_QUESTION_TYPES
+		where 
+			ITEM_QUESTION_TYPE_NO = #value#
+	</select>
+	
+	<update id="UpdateItemQuestionComment" parameterClass="kr.co.team2.vo.ItemQuestionComment">
+		update
+			ITEM_QUESTION_COMMENTS
+		set
+			ITEM_COMMENT_AVAILABLE = #available#
+		where 
+			ITEM_QUESTION_NO = #itemQuestion.no#
+	
+	</update>
+	<select id="getIemQuestionByCriteria" parameterClass="kr.co.team2.vo.Criteria" resultClass="kr.co.team2.vo.ItemQuestion">
+		select *
+		from (
+		select 
+			row_number() over (order by i.ITEM_QUESTION_CREATE_DATE desc) rn,
+			i.ITEM_QUESTION_NO				as no,
+			i.ITEM_QUESTION_TITLE			as title,
+			i.ITEM_QUESTION_CONTENTS		as contents,
+			i.ITEM_QUESTION_FILENAME		as filename,
+			i.ITEM_QUESTION_SECRET			as secret,
+			u.user_name						as "user.name",
+			u.user_no						as "user.no",
+			u.user_id						as "user.id",
+			i.ITEM_QUESTION_AVAILABLE		as available,
+			t.ITEM_QUESTION_TYPE_NO			as "itemQuestionType.no",
+			t.ITEM_QUESTION_TYPE_CONTENTS	as "itemQuestionType.contents",
+			i.ITEM_QUESTION_CREATE_DATE 	as createDate
+			
+		from item_questions i , users u , ITEM_QUESTION_TYPES t , items m
+		
+		where
+            i.user_no = u.user_no
+            and i.item_no = m.item_no
+            and i.ITEM_QUESTION_TYPE_NO = t.ITEM_QUESTION_TYPE_NO
+            and	upper(i.ITEM_QUESTION_AVAILABLE) = 'Y'
+           <dynamic>
+			<isNotNull>
+				<isEqual property="opt" compareValue="titlename">
+					
+					and t.ITEM_QUESTION_TYPE_CONTENTS like '%' || #keyword# || '%'
+				</isEqual>
+				<isEqual property="opt" compareValue="contents">
+					
+					and i.ITEM_QUESTION_CONTENTS like '%' || #keyword# || '%'
+				</isEqual>
+				<isEqual property="opt" compareValue="id">
+					and u.user_id like '%' || upper(#keyword#) ||  '%'	
+				</isEqual>				
+				<isEqual property="opt" compareValue="write">
+					and u.user_name like '%' || #keyword# || '%'
+				</isEqual>
+			</isNotNull>
+		</dynamic>
+			and t.ITEM_QUESTION_TYPE_NO = #typeno#)
+		where
+			rn >= #beginIndex# and rn &lt;= #endIndex# 		
+	
+	</select>
+	
+	<select id="getItemQuestionByCount" parameterClass="kr.co.team2.vo.Criteria" resultClass="int">
+		select count(*)
+		from item_questions i , users u
+		where 
+			i.ITEM_QUESTION_TYPE_NO = #typeno#
+			and i.user_no = u.user_no
+		<dynamic>
+			<isNotNull property="opt">
+				<isEqual property="opt" compareValue="titlename">
+					
+					and i.ITEM_QUESTION_TITLE like '%' || #keyword# || '%'
+				</isEqual>
+				<isEqual property="opt" compareValue="contents">
+					
+					and i.ITEM_QUESTION_CONTENTS like '%' || #keyword# || '%'
+				</isEqual>
+				<isEqual property="opt" compareValue="id">
+					
+					and u.user_id like '%' || #keyword# ||  '%'	
+				</isEqual>				
+				<isEqual property="opt" compareValue="write">
+					
+					and u.user_name like '%' || #keyword# || '%'
+				</isEqual>
+			</isNotNull>
+		</dynamic>
+	</select>
+	
+	
+	<select id="getAllItemName"  resultClass="kr.co.team2.vo.Item">
+		select DISTINCT
+			i.item_no	as	no,
+			i.item_name	as	name
+		from
+			items i, options o
+		where 
+			i.item_no = o.item_no
+			and i.item_sell_available = 'Y'
+			and o.OPT_SELL_AVAILABLE = 'Y'
+			and i.item_display_available = 'Y'
+	</select>
+</sqlMap>

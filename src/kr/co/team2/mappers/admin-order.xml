@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap>
+	<!-- 최근 6달 매출 조회 -->
+	<select id="getRecentOrders" resultClass="kr.co.team2.vo.monthlySales">
+		select 
+       			TO_CHAR(A.order_create_date,'yy-mm') as createDate,
+		        sum(C.opt_current_price*b.order_qty) as monthlySales
+		from 
+		        ORDERS A,ORDERDETAILS B, OPTIONS C
+		where 
+		        A.ORDER_NO = B.ORDER_NO
+		and 
+		        B.OPT_NO = C.OPT_NO
+        and     
+        		trunc(months_between(sysdate,order_create_date)) &lt;= 4
+        and
+        		A.ORDER_STATE != '입금대기'
+		group by 
+		        TO_CHAR(A.order_create_date,'yy-mm')
+		order by
+		        createDate
+	</select>
+	<!-- 번호로 주문 조회 -->
+	<select id="getOrderByN" parameterClass="int" resultClass="kr.co.team2.vo.Orders">
+		select 
+				ORDER_NO			as no,
+				ORDER_CREATE_DATE	as createDate,
+				ORDER_STATE			as state,
+				USER_NO				as "user.no"
+		from
+				ORDERS
+		where	
+				ORDER_NO = #value#
+	</select>
+	<!-- 전체 주문디테일 조회 -->
+	<select id="getAllOrderDetails" resultClass="kr.co.team2.vo.OrderDetail">
+		select
+			ORDER_ITEM_NO	as no,
+			ORDER_QTY		as qty,
+			ORDER_NO		as "order.no",
+			OPT_NO			as "option.no"
+		from
+			ORDERDETAILS
+		order by ORDER_NO desc
+	</select>
+	<select id="getBeforeOrders" resultClass="int">
+		select count(*)
+		from ORDERS
+		where ORDER_STATE = '입금대기'
+	</select>
+	<!-- 장바구니 삭제 -->
+	<delete id="deleteCart" parameterClass="int">
+		delete from CARTS
+		where OPT_NO = #value#
+	</delete>
+	<delete id="deleteCartDetail" parameterClass="int">
+		delete from CARTS
+		where OPT_NO = #value#
+	</delete>
+	<!-- 주문 업데이트 -->
+	<update id="orderUpdat" parameterClass="kr.co.team2.vo.Orders">
+		update 	
+				ORDERS
+		set 	
+				ORDER_NO			= #no#,
+				ORDER_STATE			= #state#
+		where
+				ORDER_NO			=#no#
+	</update>
+</sqlMap>
