@@ -182,7 +182,7 @@ public class AdminController {
 		return mav;
 	}
 
-	// Ajax 입금대기 카운트
+	// Ajax 주문,리뷰,문의 카운트 값 전송
 	@RequestMapping("/admin/main/count.do")
 	public ModelAndView count(HttpServletRequest request, HttpServletResponse response) throws SQLException {
 		ModelAndView mav = new ModelAndView();
