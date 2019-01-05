@@ -1,5 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-	pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -83,7 +82,7 @@
 									<input type="date" class="form-control" id="last-date" disabled>
 								</div>
 								<div class="col-sm-1" style="max-width: 60px;">
-									<a class="btn btn-primary" style="color: white;" id="all-date">전체</a>
+									<a class="btn btn-primary" style="color: white;" id="c-date">전체</a>
 									<input type="hidden" id="all-date-submit" name="allDate" />
 								</div>
 							</div>
@@ -281,14 +280,119 @@
 		</div>
 	</div>
 	<script>
-	var scrollAvailable = false;
-	var allcount = 0;
-	var cp = 1;
-	var totalRows = 1;
+	var scrollAvailable = false;	// 스크롤이 갔는지 여부
+	var allcount = 0;		// 전체 상품의 개수를 담을 변수
+	var cp = 1;			// 현재 페이지를 담을 변수
+	var totalRows = 1;		//전체 상품의 개수를 담을 변수
 	var totalRowsValue = totalRows;
-	var ItemisNotEmpty = true;
-	var firstCate = true;
-	
+	var ItemisNotEmpty = true;	// 아이템이 비어있는지 여부
+	var firstCate = true;		// 페이지를 처음열었는지 여부 
+		
+		
+		// 페이지를 처음 열었을 때 카테고리를 불러오는 함수
+		function firstCategory() {
+			var value = $("#top-category").val();
+				totalRowsValue = totalRows;
+				cp=1;
+				allCount = 0;
+				ItemisNotEmpty = true;
+				$("#table-load").html("");
+				getItems();
+				cp++;
+			}
+		
+		// 상품 정보를 가져와 화면에 출력하는 함수
+		function getItems(){
+			var topCateNo = $("#top-category").val();
+			var childCateNo = $("#child-category").val();
+			var firstDate = $("#first-date").val();
+			var lastDate = $("#last-date").val();
+			var display = $("input[name=display]:checked").val();
+			var sell= $("input[name=sell]:checked").val();
+			var keyword = $("#keyword").val();
+			$.ajax({
+				url:"getItemScroll.do",
+				type:"post",
+				data:{
+						"cp": cp,
+						"topCateNo": topCateNo,
+						"childCateNo":childCateNo,
+						"keyword": keyword,
+						"firstDate": firstDate,
+						"lastDate": lastDate,
+						"display": display,
+						"sell": sell,
+						"allDate":date
+					},
+				success:function(result){
+					if(result.length == 0){
+						$("#alert-scroll").html('<i class="fab fa-accusoft"></i>더이상 상품이 존재하지 않습니다.');
+						ItemisNotEmpty = false;
+						return;
+					}else{
+						$("#alert-scroll").html('<i class="fas fa-sort-amount-down"></i>스크롤을 아래로 내리면 상품이 표시됩니다.');
+						ItemisNotEmpty = true;
+					}
+					if(cp%2 == 0){
+						$("#table-load").append("<tr><th>No</th><th style='min-width: 150px'>상품명</th><th>정가</th><th>판매가</th><th>재고</th><th>등록일</th></tr>");
+					}
+					
+					result.forEach(function(item,index){
+						allcount++;
+						var rows;
+						var count = 0;
+						var sizes = [];
+						var colors = [];
+						item.option.forEach(function(option,index){
+							sizes.push(option.size);
+							colors.push(option.color);
+							count += option.stock;
+						});
+						var duplicatesSizes = removeDuplicatesArray(sizes);
+						var duplicatesColors = removeDuplicatesArray(colors);
+						
+						rows +="<tr>";
+						rows +="<td>"+totalRowsValue+"</td>";
+						rows +="<td data-toggle='modal' data-target='#myModal' onclick='getItemDetail("+item.no+")'>";
+						rows +='<img src="/images/items/';
+						rows += item.image;
+						rows +='"width="70px" height="70px;" style="border: 1px solid silver; padding: 2px;"class="float-left" />';
+						rows +='<ul style="list-style: none; margin-left: 27px; margin-bottom: 0px">';
+						rows +="<li>"+item.name+"</li>";
+						if(item.option.length != 0){
+							rows +='<li class="text-primary">- 색상 : ';
+							duplicatesColors.forEach(function(color,index){
+								rows +=color+" ";
+							});
+						} else {
+							rows+= '<li class="text-danger"> 옵션 없음';
+						};
+							rows +="</li>";
+							rows +='<li class="text-primary">';
+						if(item.option.length != 0){
+							rows +='<li class="text-primary">- 사이즈 : ';
+							duplicatesSizes.forEach(function(size,index){
+								rows +=size+" ";
+							});
+						};
+							rows +='</li>';
+						rows +='</ul></td>';
+						rows +='<td>'+item.price+' 원</td>';
+						rows +='<td>'+item.currentDiscount+' 원</td>';
+						rows +='<td>'+count;
+						rows +=' 개<td>'+item.createDate+'</td>';
+						rows +='</tr>';
+						$("#table-load").append(rows);
+						
+						totalRowsValue++;
+					})
+				}					
+			})
+		}
+		
+		
+		/*상품 상세 정보를 가져와서 디테일 화면을 출력하는 기능*/
+		
 		function getItemDetail(itemNo){
 			var xhr = new XMLHttpRequest();
 			xhr.onreadystatechange = function(event) {
@@ -338,7 +442,7 @@
 					
 					$("#item-opt").append(optMenu);
 					item.option.forEach(
-							function(opt,index){
+							function(opt,index){ // 옵션의 색상을 변경하는 
 								var optRow = "";
 								optRow +="<div style='margin:4px;' id='"+opt.no+"'><div class='btn-group'><button class='btn btn-primary btn-sm' style='width:198px;";
 								if(opt.color == '블루'|| opt.color.toUpperCase() == 'BLUE'||opt.color == '파랑'){optRow += "background-color:blue;"}
@@ -371,7 +475,7 @@
 			xhr.open("GET", "detail.do?itemNo=" + itemNo);
 			xhr.send();
 		}
-		
+		// 아이템 삭제 
 		  function deleteItem(itemNo){
 				 
 			  if (!confirm("삭제하시겠습니까?")) {
@@ -472,7 +576,7 @@
 			});
 		});
 		
-		//자동 스크롤
+		//스크롤 페이징 처리
 		
 		$(window).scroll(function(){
 			if($(document).height() - $(window).height() - $(window).scrollTop() <= 0.05 && ItemisNotEmpty){
@@ -486,7 +590,7 @@
 				$(window).scrollTop($(window).scrollTop()-5)
 			}
 		})
-		
+		//스크롤이 내려가면 검색창이 따라오는 기능
 		$(window).scroll(function(){
 			if($(window).scrollTop()>800){
 				$("#search-box").addClass('search-fixed');
@@ -501,8 +605,8 @@
 			}
 		})
 		
-		//검색 전송
-		
+		/*이벤트 함수들*/
+		//검색 버튼 클릭 시
 		$("#search-btn").click(function(){
 			totalRowsValue = totalRows;
 			cp=1;
@@ -512,7 +616,7 @@
 			getItems();
 			cp++;
 		});
-		
+		//검색 입력 시
 		$("#keyword").keyup(function(){
 			$(window).scrollTop(0);
 			totalRowsValue = totalRows;
@@ -523,7 +627,7 @@
 			getItems();
 			cp++;
 		});
-
+		// 여부 클릭시 
 		$('input:radio[name="display"]').click(function(){
 			totalRowsValue = totalRows;
 			cp=1;
@@ -533,7 +637,7 @@
 			getItems();
 			cp++;
 		});
-		
+		//날짜 입력 시
 		$("#last-date").change(function() {
 			var value = $("#first-date").val();
 			if(value != ''){
@@ -546,7 +650,7 @@
 				cp++;
 			}
 		})
-		
+		//카테고리 변경 시
 		$("#top-category").change(function() {
 			var value = $("#top-category").val();
 				totalRowsValue = totalRows;
@@ -557,6 +661,7 @@
 				getItems();
 				cp++;
 		})
+		//하위 카테고리 변경 시 
 		$("#child-category").change(function() {
 			var value = $("#child-category").val();
 				totalRowsValue = totalRows;
@@ -567,7 +672,7 @@
 				getItems();
 				cp++;
 		})
-		
+		//판매 여부 클릭 시 
 		$('input:radio[name="sell"]').click(function(){
 			totalRowsValue = totalRows;
 			cp=1;
@@ -579,104 +684,6 @@
 		});
 		
 		
-		function firstCategory() {
-			var value = $("#top-category").val();
-				totalRowsValue = totalRows;
-				cp=1;
-				allCount = 0;
-				ItemisNotEmpty = true;
-				$("#table-load").html("");
-				getItems();
-				cp++;
-			}
-		
-		function getItems(){
-			var topCateNo = $("#top-category").val();
-			var childCateNo = $("#child-category").val();
-			var firstDate = $("#first-date").val();
-			var lastDate = $("#last-date").val();
-			var display = $("input[name=display]:checked").val();
-			var sell= $("input[name=sell]:checked").val();
-			var keyword = $("#keyword").val();
-			$.ajax({
-				url:"getItemScroll.do",
-				type:"post",
-				data:{
-						"cp": cp,
-						"topCateNo": topCateNo,
-						"childCateNo":childCateNo,
-						"keyword": keyword,
-						"firstDate": firstDate,
-						"lastDate": lastDate,
-						"display": display,
-						"sell": sell,
-						"allDate":date
-					},
-				success:function(result){
-					if(result.length == 0){
-						$("#alert-scroll").html('<i class="fab fa-accusoft"></i>더이상 상품이 존재하지 않습니다.');
-						ItemisNotEmpty = false;
-						return;
-					}else{
-						$("#alert-scroll").html('<i class="fas fa-sort-amount-down"></i>스크롤을 아래로 내리면 상품이 표시됩니다.');
-						ItemisNotEmpty = true;
-					}
-					if(cp%2 == 0){
-						$("#table-load").append("<tr><th>No</th><th style='min-width: 150px'>상품명</th><th>정가</th><th>판매가</th><th>재고</th><th>등록일</th></tr>");
-					}
-					
-					result.forEach(function(item,index){
-						allcount++;
-						var rows;
-						var count = 0;
-						var sizes = [];
-						var colors = [];
-						item.option.forEach(function(option,index){
-							sizes.push(option.size);
-							colors.push(option.color);
-							count += option.stock;
-						});
-						var duplicatesSizes = removeDuplicatesArray(sizes);
-						var duplicatesColors = removeDuplicatesArray(colors);
-						
-						rows +="<tr>";
-						rows +="<td>"+totalRowsValue+"</td>";
-						rows +="<td data-toggle='modal' data-target='#myModal' onclick='getItemDetail("+item.no+")'>";
-						rows +='<img src="/images/items/';
-						rows += item.image;
-						rows +='"width="70px" height="70px;" style="border: 1px solid silver; padding: 2px;"class="float-left" />';
-						rows +='<ul style="list-style: none; margin-left: 27px; margin-bottom: 0px">';
-						rows +="<li>"+item.name+"</li>";
-						if(item.option.length != 0){
-							rows +='<li class="text-primary">- 색상 : ';
-							duplicatesColors.forEach(function(color,index){
-								rows +=color+" ";
-							});
-						} else {
-							rows+= '<li class="text-danger"> 옵션 없음';
-						};
-							rows +="</li>";
-							rows +='<li class="text-primary">';
-						if(item.option.length != 0){
-							rows +='<li class="text-primary">- 사이즈 : ';
-							duplicatesSizes.forEach(function(size,index){
-								rows +=size+" ";
-							});
-						};
-							rows +='</li>';
-						rows +='</ul></td>';
-						rows +='<td>'+item.price+' 원</td>';
-						rows +='<td>'+item.currentDiscount+' 원</td>';
-						rows +='<td>'+count;
-						rows +=' 개<td>'+item.createDate+'</td>';
-						rows +='</tr>';
-						$("#table-load").append(rows);
-						
-						totalRowsValue++;
-					})
-				}					
-			})
-		}
 		//중복제거
 	   function removeDuplicatesArray(arr) {
         var tempArr = [];
