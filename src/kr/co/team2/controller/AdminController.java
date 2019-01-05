@@ -592,36 +592,6 @@ public class AdminController {
 			mav.setViewName("admin/etc/login.jsp?fail=login");
 			return mav;
 		}
-		/*
-		 * // cp설정 int cp = 1; int rows = 9; // cp가 있을 경우 try { cp =
-		 * Integer.parseInt(request.getParameter("cp")); System.out.println(cp); } catch
-		 * (Exception e) { }
-		 * 
-		 * try { int topCateNo = Integer.parseInt(request.getParameter("topCategory"));
-		 * int childCateNo = Integer.parseInt(request.getParameter("childCategory"));
-		 * boolean allDate = Boolean.parseBoolean(request.getParameter("allDate")); if
-		 * (allDate) {
-		 * 
-		 * } else { String firstDate = request.getParameter("firstDate"); String
-		 * lastDate = request.getParameter("lastDate"); } String display =
-		 * request.getParameter("display"); String sell = request.getParameter("sell");
-		 * String keyword = request.getParameter("keyword");
-		 * 
-		 * } catch (Exception e) { }
-		 * 
-		 * // 전체 상품 개수
-		 * 
-		 * int rows = 5; int cp = 1; Criteria criteria = new Criteria();
-		 * criteria.setBeginIndex((cp-1)*rows + 1); criteria.setEndIndex(cp*rows);
-		 * 
-		 * int totalRows = itemService.getAllItemsCount(); Pagination pagination = new
-		 * Pagination(cp, rows, totalRows);
-		 * 
-		 * List<Item> items = itemService.getItemByCriteria(criteria); for (Item item :
-		 * items) { System.out.println(item.getNo()+":"+item.getName()); }
-		 * mav.addAttribute("pagination", pagination);
-		 */
-		// mav.addAttribute("items", items);
 		List<Category> categorys = itemService.getTopCategorys();
 		int totalRows = itemService.getAllItemsCount();
 
