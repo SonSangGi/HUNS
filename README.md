@@ -1,4 +1,10 @@
 # WEB-HUNS
+<h1>주요 서비스 동영상 link</h1>
+<ul>
+  <li><a href="https://www.youtube.com/watch?v=FS3z6waNDzY">상품 목록 link</a></li>
+  <li><a href="https://www.youtube.com/watch?v=kcGgr6EtwA8">상품 등록 link</a></li>
+  <li><a href="https://www.youtube.com/watch?v=cQpjifDu8x4">카테고리 link</a></li>
+</ul>
 
 ![pp](./README_imgs/2.PNG)
 ![pp](./README_imgs/3.PNG)
